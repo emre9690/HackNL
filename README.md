@@ -1,4 +1,4 @@
-# StadSpas — Discover Rotterdam
+# StadKompas — Discover Rotterdam
 
 A hackathon MVP that helps residents (especially newcomers and international students) discover low-pressure, recurring social routines and spaces in Rotterdam. Built with a phone-mockup UI for demo purposes.
 
