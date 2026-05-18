@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Loader2, Check } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Check, Plus, X } from 'lucide-react';
+
 import { UserPreferences, AIProfile, Screen } from '../types';
 
 interface OnboardingProps {
@@ -10,34 +11,47 @@ interface OnboardingProps {
   isEditing?: boolean;
 }
 
-const INTEREST_CATEGORIES = [
+// ── Interest categories ──
+const CATEGORIES = [
   {
-    label: 'Movement',
-    color: '#f97316',
-    bg: 'rgba(249,115,22,0.15)',
-    border: 'rgba(249,115,22,0.4)',
-    items: ['Active', 'Bouldering', 'Walking', 'Outdoors'],
+    key: 'movement',
+    label: 'Movement & Sport',
+    color: '#DC2626',
+    bg: 'rgba(220,38,38,0.1)',
+    border: 'rgba(220,38,38,0.35)',
+    items: ['Running', 'Cycling', 'Bouldering', 'Climbing', 'Swimming', 'Yoga', 'Football', 'Basketball', 'Tennis', 'Badminton', 'Dance', 'Martial arts', 'Skateboarding', 'CrossFit', 'Volleyball', 'Hiking', 'Walking', 'Sailing'],
   },
   {
+    key: 'creative',
     label: 'Creative & Arts',
-    color: '#a855f7',
-    bg: 'rgba(168,85,247,0.15)',
-    border: 'rgba(168,85,247,0.4)',
-    items: ['Creative', 'Music', 'Sketching'],
+    color: '#E8651A',
+    bg: 'rgba(232,101,26,0.1)',
+    border: 'rgba(232,101,26,0.35)',
+    items: ['Drawing', 'Painting', 'Sketching', 'Photography', 'Music', 'Guitar', 'Piano', 'Singing', 'DJ-ing', 'Film', 'Theatre', 'Improv', 'Writing', 'Poetry', 'Ceramics', 'Knitting', 'Graphic design', 'Street art'],
   },
   {
+    key: 'mind',
     label: 'Mind & Learning',
-    color: '#3b82f6',
-    bg: 'rgba(59,130,246,0.15)',
-    border: 'rgba(59,130,246,0.4)',
-    items: ['Study', 'Tech', 'Reading'],
+    color: '#1A52A8',
+    bg: 'rgba(26,82,168,0.1)',
+    border: 'rgba(26,82,168,0.35)',
+    items: ['Study', 'Coding', 'Reading', 'Languages', 'Philosophy', 'Debating', 'Science', 'History', 'Mathematics', 'Trivia', 'Puzzles', 'Astronomy', 'Psychology', 'Investing'],
   },
   {
-    label: 'Social & Games',
-    color: '#4ade80',
-    bg: 'rgba(74,222,128,0.15)',
-    border: 'rgba(74,222,128,0.4)',
-    items: ['Games', 'Food & coffee', 'Language exchange'],
+    key: 'games',
+    label: 'Board & Table Games',
+    color: '#7C3AED',
+    bg: 'rgba(124,58,237,0.1)',
+    border: 'rgba(124,58,237,0.35)',
+    items: ['Board games', 'Card games', 'Chess', 'Catan', 'D&D', 'Tabletop RPG', 'Warhammer', 'Magic: the Gathering', 'Go', 'Backgammon', 'Escape rooms', 'Trivia nights', 'Strategy games'],
+  },
+  {
+    key: 'social',
+    label: 'Food, Culture & Social',
+    color: '#16A34A',
+    bg: 'rgba(22,163,74,0.1)',
+    border: 'rgba(22,163,74,0.35)',
+    items: ['Food & coffee', 'Cooking', 'Baking', 'Wine', 'Craft beer', 'Language exchange', 'Volunteering', 'Community garden', 'Movie nights', 'Karaoke', 'Concerts', 'Museums', 'Open mic', 'Cultural events'],
   },
 ];
 
@@ -53,7 +67,9 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState('');
   const [vibe, setVibe] = useState('');
   const [language, setLanguage] = useState('');
   const [ageRange, setAgeRange] = useState('');
@@ -65,6 +81,7 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
     if (initialPrefs) {
       setFirstName(initialPrefs.firstName || '');
       setLastName(initialPrefs.lastName || '');
+      setPhone(initialPrefs.phone || '');
       setInterests(initialPrefs.interests || []);
       setVibe(initialPrefs.vibe || '');
       setLanguage(initialPrefs.language || '');
@@ -80,18 +97,25 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
     );
   };
 
-  const handleBack = () => {
-    if (step === 0 && isEditing) {
-      onNavigate('profile');
-    } else if (step > 0) {
-      setStep((s) => s - 1);
+  const addCustom = () => {
+    const trimmed = customInput.trim();
+    if (trimmed && !interests.includes(trimmed)) {
+      setInterests((prev) => [...prev, trimmed]);
     }
+    setCustomInput('');
+  };
+
+  const removeInterest = (item: string) => setInterests((prev) => prev.filter((i) => i !== item));
+
+  const handleBack = () => {
+    if (step === 0 && isEditing) onNavigate('profile');
+    else if (step > 0) setStep((s) => s - 1);
   };
 
   const handleSubmit = async () => {
     setIsLoading(true);
     const prefs: UserPreferences = {
-      firstName, lastName, interests, vibe, language, ageRange, area, freeText,
+      firstName, lastName, phone, interests, vibe, language, ageRange, area, freeText,
     };
     try {
       const res = await fetch('/api/ai/profile', {
@@ -105,13 +129,15 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
       onComplete(prefs, {
         archetype: 'The Curious Explorer',
         summary: 'You enjoy low-pressure creative and social spaces.',
-        tags: ['games', 'study', 'outdoors', 'creative'],
-        recommendedCategories: ['Games', 'Study', 'Creative', 'Walking'],
+        tags: interests.slice(0, 5).map((i) => i.toLowerCase()),
+        recommendedCategories: interests.slice(0, 4),
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const showBack = step > 0 || isEditing;
 
   const steps = [
     { title: 'What do you enjoy?', subtitle: 'Pick as many as you like.' },
@@ -119,31 +145,34 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
     { title: 'Anything else?', subtitle: 'Optional — in your own words.' },
   ];
 
-  const showBack = step > 0 || isEditing;
-
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ background: '#0d0d12', paddingTop: 52 }}>
+    <div
+      className="absolute inset-0 flex flex-col"
+      style={{ background: '#F7F3EE', paddingTop: 52 }}
+    >
       {/* Header */}
       <div className="px-5 mb-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           {showBack ? (
-            <button onClick={handleBack} className="text-white/40 p-1">
+            <button onClick={handleBack} className="p-1" style={{ color: '#6B7280' }}>
               <ArrowLeft size={18} />
             </button>
           ) : <div className="w-7" />}
-          <p className="text-white/30 text-xs">{step + 1} / 3</p>
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>{step + 1} / 3</p>
         </div>
         <div className="flex gap-1.5">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="flex-1 h-1 rounded-full transition-all duration-300"
-              style={{ background: i <= step ? '#4ade80' : 'rgba(255,255,255,0.1)' }}
+              className="flex-1 h-1.5 rounded-full transition-all duration-300"
+              style={{ background: i <= step ? '#E8651A' : 'rgba(0,0,0,0.1)' }}
             />
           ))}
         </div>
-        <h2 className="text-white font-bold text-xl mt-4 mb-0.5">{steps[step].title}</h2>
-        <p className="text-white/40 text-sm">{steps[step].subtitle}</p>
+        <h2 className="font-bold text-xl mt-4 mb-0.5" style={{ color: '#1A1A2E' }}>
+          {steps[step].title}
+        </h2>
+        <p className="text-sm" style={{ color: '#6B7280' }}>{steps[step].subtitle}</p>
       </div>
 
       {/* Content */}
@@ -155,18 +184,44 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
               initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
-              transition={{ duration: 0.22 }}
+              transition={{ duration: 0.2 }}
               className="flex flex-col gap-5"
             >
-              {INTEREST_CATEGORIES.map((cat) => (
-                <div key={cat.label}>
+{/* Selected chips (custom + all selected) */}
+              {interests.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-2" style={{ color: '#9CA3AF' }}>
+                    {interests.length} selected
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {interests.map((item) => (
+                      <motion.span
+                        key={item}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold"
+                        style={{ background: '#1A1A2E', color: 'white' }}
+                      >
+                        {item}
+                        <button onClick={() => removeInterest(item)} className="ml-0.5 opacity-60">
+                          <X size={10} />
+                        </button>
+                      </motion.span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Categories */}
+              {CATEGORIES.map((cat) => (
+                <div key={cat.key}>
                   <p
-                    className="text-xs font-semibold uppercase tracking-wider mb-2.5"
+                    className="text-xs font-bold uppercase tracking-wider mb-2.5"
                     style={{ color: cat.color }}
                   >
                     {cat.label}
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {cat.items.map((item) => {
                       const selected = interests.includes(item);
                       return (
@@ -174,23 +229,16 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
                           key={item}
                           onClick={() => toggleInterest(item)}
                           whileTap={{ scale: 0.88 }}
-                          whileHover={{ scale: 1.04 }}
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-colors"
+                          whileHover={{ scale: 1.03 }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
                           style={{
-                            background: selected ? cat.bg : 'rgba(255,255,255,0.06)',
-                            border: `1px solid ${selected ? cat.border : 'rgba(255,255,255,0.1)'}`,
-                            color: selected ? cat.color : 'rgba(255,255,255,0.55)',
+                            background: selected ? cat.bg : 'white',
+                            border: `1px solid ${selected ? cat.border : 'rgba(0,0,0,0.1)'}`,
+                            color: selected ? cat.color : '#4B5563',
+                            boxShadow: selected ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
                           }}
                         >
-                          {selected && (
-                            <motion.span
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                            >
-                              <Check size={11} />
-                            </motion.span>
-                          )}
+                          {selected && <Check size={10} />}
                           {item}
                         </motion.button>
                       );
@@ -198,18 +246,40 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
                   </div>
                 </div>
               ))}
-              <AnimatePresence>
-                {interests.length > 0 && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-white/30 text-xs"
+
+              {/* Custom input */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: '#9CA3AF' }}>
+                  Something else?
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addCustom()}
+                    placeholder="Type an interest and press enter..."
+                    className="flex-1 rounded-xl px-3.5 py-2.5 text-sm outline-none"
+                    style={{
+                      background: 'white',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      color: '#1A1A2E',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    }}
+                  />
+                  <button
+                    onClick={addCustom}
+                    disabled={!customInput.trim()}
+                    className="px-3 py-2.5 rounded-xl font-medium text-sm"
+                    style={{
+                      background: customInput.trim() ? '#E8651A' : 'rgba(0,0,0,0.07)',
+                      color: customInput.trim() ? 'white' : '#9CA3AF',
+                    }}
                   >
-                    {interests.length} selected
-                  </motion.p>
-                )}
-              </AnimatePresence>
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -219,25 +289,26 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
               initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
-              transition={{ duration: 0.22 }}
+              transition={{ duration: 0.2 }}
               className="flex flex-col gap-5"
             >
-              {/* Name */}
+              {/* Name — stacked */}
               <div>
-                <p className="text-white/50 text-xs font-medium uppercase tracking-wider mb-2.5">
+                <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: '#6B7280' }}>
                   Your name
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   <input
                     type="text"
                     placeholder="First name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="flex-1 rounded-xl px-3.5 py-2.5 text-sm outline-none placeholder:text-white/25"
+                    className="w-full rounded-xl px-3.5 py-3 text-sm outline-none"
                     style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.85)',
+                      background: 'white',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      color: '#1A1A2E',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                     }}
                   />
                   <input
@@ -245,14 +316,38 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
                     placeholder="Last name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="flex-1 rounded-xl px-3.5 py-2.5 text-sm outline-none placeholder:text-white/25"
+                    className="w-full rounded-xl px-3.5 py-3 text-sm outline-none"
                     style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.85)',
+                      background: 'white',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      color: '#1A1A2E',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                     }}
                   />
                 </div>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: '#6B7280' }}>
+                  Phone number <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optional)</span>
+                </p>
+                <input
+                  type="tel"
+                  placeholder="+31 6 ..."
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full rounded-xl px-3.5 py-3 text-sm outline-none"
+                  style={{
+                    background: 'white',
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    color: '#1A1A2E',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                  }}
+                />
+                <p className="text-xs mt-1.5" style={{ color: '#9CA3AF' }}>
+                  Shared only with connections you accept.
+                </p>
               </div>
 
               <SelectGroup label="Vibe" options={VIBES} value={vibe} onChange={setVibe} />
@@ -268,21 +363,22 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
               initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
-              transition={{ duration: 0.22 }}
+              transition={{ duration: 0.2 }}
             >
               <textarea
                 value={freeText}
                 onChange={(e) => setFreeText(e.target.value)}
                 placeholder="Example: I like quiet cafés, board games, and I'm new to Rotterdam."
-                className="w-full rounded-2xl p-4 text-sm resize-none outline-none placeholder:text-white/25"
+                className="w-full rounded-2xl p-4 text-sm resize-none outline-none"
                 rows={5}
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.8)',
+                  background: 'white',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  color: '#1A1A2E',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                 }}
               />
-              <p className="text-white/25 text-xs mt-2">
+              <p className="text-xs mt-2" style={{ color: '#9CA3AF' }}>
                 Optional. Helps us tailor your suggestions.
               </p>
             </motion.div>
@@ -296,11 +392,16 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
           <button
             onClick={() => setStep((s) => s + 1)}
             disabled={step === 0 && interests.length === 0}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-sm transition-all"
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm transition-all"
             style={{
-              background: step === 0 && interests.length === 0 ? 'rgba(74,222,128,0.2)' : '#4ade80',
-              color: '#0a0a0f',
-              opacity: step === 0 && interests.length === 0 ? 0.4 : 1,
+              background: step === 0 && interests.length === 0
+                ? 'rgba(232,101,26,0.2)'
+                : 'linear-gradient(135deg, #E8651A, #FF8C42)',
+              color: step === 0 && interests.length === 0 ? '#E8651A' : 'white',
+              boxShadow: step === 0 && interests.length === 0
+                ? 'none'
+                : '0 6px 20px rgba(232,101,26,0.35)',
+              opacity: step === 0 && interests.length === 0 ? 0.5 : 1,
             }}
           >
             Continue <ArrowRight size={15} />
@@ -309,8 +410,12 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-sm transition-all"
-            style={{ background: '#4ade80', color: '#0a0a0f' }}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm"
+            style={{
+              background: 'linear-gradient(135deg, #E8651A, #FF8C42)',
+              color: 'white',
+              boxShadow: '0 6px 20px rgba(232,101,26,0.35)',
+            }}
           >
             {isLoading ? (
               <><Loader2 size={16} className="animate-spin" /> Building your profile...</>
@@ -334,7 +439,9 @@ interface SelectGroupProps {
 function SelectGroup({ label, options, value, onChange }: SelectGroupProps) {
   return (
     <div>
-      <p className="text-white/50 text-xs font-medium uppercase tracking-wider mb-2.5">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: '#6B7280' }}>
+        {label}
+      </p>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => {
           const selected = value === opt;
@@ -345,9 +452,10 @@ function SelectGroup({ label, options, value, onChange }: SelectGroupProps) {
               whileTap={{ scale: 0.9 }}
               className="px-3.5 py-2 rounded-full text-sm font-medium transition-colors"
               style={{
-                background: selected ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
-                border: `1px solid ${selected ? 'rgba(74,222,128,0.45)' : 'rgba(255,255,255,0.1)'}`,
-                color: selected ? '#4ade80' : 'rgba(255,255,255,0.55)',
+                background: selected ? '#1A1A2E' : 'white',
+                border: `1px solid ${selected ? '#1A1A2E' : 'rgba(0,0,0,0.1)'}`,
+                color: selected ? 'white' : '#4B5563',
+                boxShadow: selected ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
               }}
             >
               {opt}

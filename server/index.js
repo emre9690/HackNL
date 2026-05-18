@@ -16,7 +16,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`StadSpas server running on http://localhost:${PORT}`);
+  console.log(`StadKompas server running on http://localhost:${PORT}`);
   if (process.env.ANTHROPIC_API_KEY) {
     console.log('Claude API key detected — using live AI responses.');
   } else {

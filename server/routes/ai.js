@@ -108,7 +108,7 @@ router.post('/suggestions', async (req, res) => {
       messages: [
         {
           role: 'user',
-          content: `You are a city event coordinator for Rotterdam's StadSpas platform. Generate 2 new event suggestions based on community demand data. Respond ONLY with a JSON array of suggestion objects with these fields: id, title, location, area, time, language, vibeTags (array), reason, suggestedAction, status ("pending").`,
+          content: `You are a city event coordinator for Rotterdam's StadKompas platform. Generate 2 new event suggestions based on community demand data. Respond ONLY with a JSON array of suggestion objects with these fields: id, title, location, area, time, language, vibeTags (array), reason, suggestedAction, status ("pending").`,
         },
       ],
     });

@@ -6,13 +6,16 @@ interface PhoneFrameProps {
 
 export default function PhoneFrame({ children }: PhoneFrameProps) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#0a0a0f] relative overflow-hidden">
-      {/* Radial glow background */}
+    <div
+      className="min-h-screen w-full flex items-center justify-center relative overflow-hidden"
+      style={{ background: '#0F172A' }}
+    >
+      {/* Radial glow — Dutch orange tint */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(74,222,128,0.06) 0%, rgba(10,10,15,0) 70%)',
+            'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(232,101,26,0.07) 0%, rgba(15,23,42,0) 70%)',
         }}
       />
 
@@ -23,10 +26,10 @@ export default function PhoneFrame({ children }: PhoneFrameProps) {
           width: 390,
           height: 844,
           borderRadius: 44,
-          background: '#1a1a1a',
-          border: '1px solid rgba(255,255,255,0.15)',
+          background: '#F7F3EE',
+          border: '1px solid rgba(0,0,0,0.25)',
           boxShadow:
-            '0 0 0 1px rgba(0,0,0,0.8), 0 40px 80px rgba(0,0,0,0.8), 0 0 60px rgba(74,222,128,0.04)',
+            '0 0 0 8px #2D2D35, 0 40px 80px rgba(0,0,0,0.7), 0 0 60px rgba(232,101,26,0.06)',
           overflow: 'hidden',
           position: 'relative',
         }}
@@ -37,7 +40,7 @@ export default function PhoneFrame({ children }: PhoneFrameProps) {
           style={{
             width: 120,
             height: 34,
-            background: '#0a0a0f',
+            background: '#1A1A1A',
             borderRadius: 20,
           }}
         />
@@ -53,7 +56,7 @@ export default function PhoneFrame({ children }: PhoneFrameProps) {
           style={{
             width: 134,
             height: 5,
-            background: 'rgba(255,255,255,0.3)',
+            background: 'rgba(0,0,0,0.2)',
             borderRadius: 3,
           }}
         />

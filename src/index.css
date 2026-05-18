@@ -8,7 +8,7 @@
 
 body {
   margin: 0;
-  background: #0a0a0f;
+  background: #0F172A;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -18,26 +18,26 @@ body {
 }
 
 /* ── Leaflet dark popup theme ── */
-.stadspas-popup .leaflet-popup-content-wrapper {
-  background: rgba(16, 20, 32, 0.97) !important;
+.stadkompas-popup .leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.97) !important;
   backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(74, 222, 128, 0.2) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
   border-radius: 14px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(74,222,128,0.05) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
   padding: 0 !important;
 }
 
-.stadspas-popup .leaflet-popup-content {
+.stadkompas-popup .leaflet-popup-content {
   margin: 0 !important;
-  color: white !important;
+  color: #1A1A2E !important;
 }
 
-.stadspas-popup .leaflet-popup-tip-container {
+.stadkompas-popup .leaflet-popup-tip-container {
   display: none !important;
 }
 
-.stadspas-popup .leaflet-popup-close-button {
-  color: rgba(255, 255, 255, 0.4) !important;
+.stadkompas-popup .leaflet-popup-close-button {
+  color: rgba(0, 0, 0, 0.4) !important;
   top: 6px !important;
   right: 10px !important;
   font-size: 16px !important;
@@ -46,13 +46,22 @@ body {
   line-height: 18px !important;
 }
 
-.stadspas-popup .leaflet-popup-close-button:hover {
-  color: white !important;
+.stadkompas-popup .leaflet-popup-close-button:hover {
+  color: #1A1A2E !important;
   background: none !important;
 }
 
 /* ── Marker pulse animation ── */
-@keyframes stadspas-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.6); opacity: 0.2; }
+@keyframes stadkompas-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.8); opacity: 0.15; }
+}
+
+/* ── Input placeholder colors ── */
+input::placeholder {
+  color: #9CA3AF;
+}
+
+textarea::placeholder {
+  color: #9CA3AF;
 }
