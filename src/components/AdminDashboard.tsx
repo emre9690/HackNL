@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, CheckCircle, BarChart2, Check, X, Edit3, TrendingUp } from 'lucide-react';
+import { Sparkles, CheckCircle, BarChart2, Check, X, TrendingUp, User2, ChevronDown, ChevronUp } from 'lucide-react';
 import { AISuggestion } from '../types';
 import { insightSections, summaryCards } from '../data/insights';
 
 interface AdminDashboardProps {
   suggestions: AISuggestion[];
-  onUpdateSuggestion: (id: string, status: 'approved' | 'rejected') => void;
+  onUpdateSuggestion: (id: string, status: 'approved' | 'rejected', host?: { name: string; role: string }) => void;
 }
+
+const HOST_ROLES = ['Volunteer host', 'Venue staff', 'StadKompas organiser', 'External partner'];
 
 type AdminTab = 'suggestions' | 'approved' | 'insights';
 
@@ -102,7 +104,7 @@ export default function AdminDashboard({ suggestions, onUpdateSuggestion }: Admi
                   <SuggestionCard
                     key={sug.id}
                     suggestion={sug}
-                    onApprove={() => onUpdateSuggestion(sug.id, 'approved')}
+                    onApprove={(host) => onUpdateSuggestion(sug.id, 'approved', host)}
                     onReject={() => onUpdateSuggestion(sug.id, 'rejected')}
                   />
                 ))
@@ -135,20 +137,36 @@ export default function AdminDashboard({ suggestions, onUpdateSuggestion }: Admi
                   >
                     <div className="flex items-start gap-2 mb-2">
                       <CheckCircle size={14} color="#16A34A" className="mt-0.5 flex-shrink-0" />
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-sm" style={{ color: '#1A1A2E' }}>{sug.title}</h3>
                         <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
                           {sug.location} · {sug.time}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 mb-3">
                       {sug.vibeTags.map((tag) => (
                         <span key={tag} className={`text-[10px] px-2 py-0.5 rounded-full ${vibeColors[tag] || 'bg-gray-100 text-gray-500'}`}>
                           {tag}
                         </span>
                       ))}
                     </div>
+                    {sug.assignedHost ? (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                        style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                        <User2 size={12} color="#16A34A" />
+                        <div>
+                          <span className="text-xs font-bold" style={{ color: '#16A34A' }}>{sug.assignedHost.name}</span>
+                          <span className="text-xs ml-1.5" style={{ color: '#6B7280' }}>· {sug.assignedHost.role}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
+                        style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)' }}>
+                        <User2 size={12} color="#9CA3AF" />
+                        <span className="text-xs" style={{ color: '#9CA3AF' }}>No host assigned</span>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -222,11 +240,15 @@ export default function AdminDashboard({ suggestions, onUpdateSuggestion }: Admi
 
 interface SuggestionCardProps {
   suggestion: AISuggestion;
-  onApprove: () => void;
+  onApprove: (host?: { name: string; role: string }) => void;
   onReject: () => void;
 }
 
 function SuggestionCard({ suggestion, onApprove, onReject }: SuggestionCardProps) {
+  const [hostName, setHostName] = useState('');
+  const [hostRole, setHostRole] = useState(HOST_ROLES[0]);
+  const [showHost, setShowHost] = useState(false);
+
   const vibeColors2: Record<string, string> = {
     'Social-light': 'bg-purple-100 text-purple-700',
     Language: 'bg-blue-100 text-blue-700',
@@ -238,6 +260,11 @@ function SuggestionCard({ suggestion, onApprove, onReject }: SuggestionCardProps
     Outdoors: 'bg-emerald-100 text-emerald-700',
     Games: 'bg-indigo-100 text-indigo-700',
     Dutch: 'bg-blue-50 text-blue-600',
+  };
+
+  const handleApprove = () => {
+    const host = hostName.trim() ? { name: hostName.trim(), role: hostRole } : undefined;
+    onApprove(host);
   };
 
   return (
@@ -278,19 +305,69 @@ function SuggestionCard({ suggestion, onApprove, onReject }: SuggestionCardProps
         <p className="text-xs leading-relaxed" style={{ color: '#4B5563' }}>{suggestion.suggestedAction}</p>
       </div>
 
+      {/* Host assignment */}
+      <button
+        onClick={() => setShowHost((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl mb-3 text-xs font-semibold"
+        style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.07)', color: '#4B5563' }}
+      >
+        <div className="flex items-center gap-1.5">
+          <User2 size={12} />
+          {hostName ? (
+            <span><span style={{ color: '#1A1A2E', fontWeight: 700 }}>{hostName}</span> · {hostRole}</span>
+          ) : (
+            'Assign a host'
+          )}
+        </div>
+        {showHost ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+      </button>
+
+      <AnimatePresence>
+        {showHost && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-col gap-2 mb-3 pt-1">
+              <input
+                type="text"
+                placeholder="Host name"
+                value={hostName}
+                onChange={(e) => setHostName(e.target.value)}
+                className="w-full rounded-xl px-3 py-2.5 text-xs outline-none"
+                style={{ background: 'white', border: '1px solid rgba(0,0,0,0.1)', color: '#1A1A2E' }}
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {HOST_ROLES.map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => setHostRole(role)}
+                    className="px-2.5 py-1 rounded-full text-[10px] font-semibold"
+                    style={{
+                      background: hostRole === role ? '#1A1A2E' : 'white',
+                      border: `1px solid ${hostRole === role ? '#1A1A2E' : 'rgba(0,0,0,0.1)'}`,
+                      color: hostRole === role ? 'white' : '#6B7280',
+                    }}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex gap-2">
         <button
-          onClick={onApprove}
+          onClick={handleApprove}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all"
           style={{ background: '#F0FDF4', border: '1px solid rgba(22,163,74,0.3)', color: '#16A34A' }}
         >
           <Check size={13} /> Approve
-        </button>
-        <button
-          className="px-3 py-2 rounded-xl text-xs font-semibold"
-          style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.08)', color: '#9CA3AF' }}
-        >
-          <Edit3 size={13} />
         </button>
         <button
           onClick={onReject}

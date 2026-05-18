@@ -77,8 +77,8 @@ export default function App() {
   const [attendDelta, setAttendDelta] = useState<Record<string, { considering: number; going: number }>>(
     loadLS<Record<string, { considering: number; going: number }>>(LS_ATTEND_DELTA) || {}
   );
-  const [incomingHandled, setIncomingHandled] = useState<'none' | 'accepted' | 'declined'>(
-    loadLS<'none' | 'accepted' | 'declined'>(LS_INCOMING) || 'none'
+  const [incomingHandled, setIncomingHandled] = useState<Record<string, 'accepted' | 'declined'>>(
+    loadLS<Record<string, 'accepted' | 'declined'>>(LS_INCOMING) || {}
   );
   const [suggestions, setSuggestions] = useState<AISuggestion[]>(initialSuggestions);
 
@@ -150,15 +150,21 @@ export default function App() {
     setConnections(INITIAL_CONNECTIONS);
     setAttendStatus({});
     setAttendDelta({});
-    setIncomingHandled('none');
+    setIncomingHandled({});
     setSelectedEvent(null);
     setMode('resident');
     setCurrentScreen('landing');
     setSuggestions(initialSuggestions);
   }, []);
 
-  const handleUpdateSuggestion = (id: string, status: 'approved' | 'rejected') => {
-    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+  const handleUpdateSuggestion = (
+    id: string,
+    status: 'approved' | 'rejected',
+    host?: { name: string; role: string }
+  ) => {
+    setSuggestions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status, ...(host ? { assignedHost: host } : {}) } : s))
+    );
   };
 
   const handleNavigate = (screen: Screen) => {
@@ -227,18 +233,31 @@ export default function App() {
           />
         ) : null;
 
-      case 'arrival':
+      case 'arrival': {
+        const arrivalEvent = selectedEvent || events[0];
+        const eventIncoming = incomingHandled[arrivalEvent.id] || 'none';
+        const handleSetIncoming = (v: 'none' | 'accepted' | 'declined') => {
+          setIncomingHandled((prev) => {
+            if (v === 'none') {
+              const next = { ...prev };
+              delete next[arrivalEvent.id];
+              return next;
+            }
+            return { ...prev, [arrivalEvent.id]: v };
+          });
+        };
         return (
           <ArrivalBadge
-            event={selectedEvent || events[0]}
+            event={arrivalEvent}
             onBack={() => setCurrentScreen(selectedEvent ? 'event-detail' : 'home')}
             connections={connections}
             onAddConnection={handleAddConnection}
             onUpdateConnection={handleUpdateConnection}
-            incomingHandled={incomingHandled}
-            onSetIncomingHandled={setIncomingHandled}
+            incomingHandled={eventIncoming}
+            onSetIncomingHandled={handleSetIncoming}
           />
         );
+      }
 
       case 'map':
         return (
