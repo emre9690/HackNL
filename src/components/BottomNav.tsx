@@ -26,16 +26,17 @@ export default function BottomNav({ mode, currentScreen, onNavigate }: BottomNav
 
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 z-40"
+      className="absolute bottom-0 left-0 right-0"
       style={{
+        zIndex: 1000,
         background: 'rgba(255,255,255,0.97)',
         backdropFilter: 'blur(20px)',
         borderTop: '1px solid rgba(0,0,0,0.07)',
-        paddingBottom: 24,
+        paddingBottom: 12,
         boxShadow: '0 -4px 20px rgba(0,0,0,0.06)',
       }}
     >
-      <div className="flex items-center justify-around pt-3 pb-1 px-2">
+      <div className="flex items-center justify-around pt-2 pb-0 px-2">
         {tabs.map((tab, i) => {
           const isActive = mode === 'admin' ? false : currentScreen === tab.screen;
           const Icon = tab.icon;

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, MapPin, Clock, Globe, Users, Zap, Bookmark, CheckCircle2 } from 'lucide-react';
 import { EventRoutine, Screen, AppMode, AttendStatus, UserPreferences } from '../types';
 import MapView from '../components/MapView';
@@ -111,7 +111,7 @@ export default function EventDetail({
       transition={{ duration: 0.3 }}
     >
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: 80 }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingBottom: 160 }}>
         {/* Back + Save */}
         <div className="px-5 pt-14 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -204,82 +204,97 @@ export default function EventDetail({
             <p className="text-sm leading-relaxed" style={{ color: '#4B5563' }}>{whyMsg}</p>
           </div>
 
-          {/* Attendance */}
+          {/* Attendance + maybe/confirm inline */}
           <div className="rounded-2xl p-4 mb-5"
             style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
               <Users size={14} color="#9CA3AF" />
               <span className="text-sm" style={{ color: '#6B7280' }}>
                 <span className="font-bold" style={{ color: '#1A1A2E' }}>{displayEvent.considering}</span> considering ·{' '}
                 <span className="font-bold" style={{ color: '#1A1A2E' }}>{displayEvent.going}</span> going
               </span>
             </div>
-            {attendStatus !== 'none' && (
-              <p className="text-xs mt-2 font-medium" style={{ color: '#E8651A' }}>
-                You're marked as {attendStatus === 'maybe' ? 'considering' : 'going'}.
-              </p>
-            )}
+            <div className="flex gap-2">
+              <motion.button
+                onClick={handleMaybe}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-xs"
+                style={{
+                  background: attendStatus === 'maybe' ? '#FFF0E8' : '#F9FAFB',
+                  border: `1.5px solid ${attendStatus === 'maybe' ? '#E8651A' : 'rgba(0,0,0,0.08)'}`,
+                  color: attendStatus === 'maybe' ? '#E8651A' : '#6B7280',
+                }}
+              >
+                {attendStatus === 'maybe' && <CheckMark size={11} />}
+                I might go
+              </motion.button>
+              <motion.button
+                onClick={handleConfirm}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-xs"
+                style={{
+                  background: attendStatus === 'going' ? '#F0FDF4' : '#F9FAFB',
+                  border: `1.5px solid ${attendStatus === 'going' ? '#16A34A' : 'rgba(0,0,0,0.08)'}`,
+                  color: attendStatus === 'going' ? '#16A34A' : '#6B7280',
+                }}
+              >
+                {attendStatus === 'going' && <CheckCircle2 size={12} />}
+                Confirmed going
+              </motion.button>
+            </div>
           </div>
 
           {/* Map preview */}
           <div
-            className="rounded-2xl overflow-hidden mb-6"
-            style={{ height: 200, border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+            className="rounded-2xl overflow-hidden mb-4"
+            style={{ height: 180, border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
           >
             <MapView
               events={[event]}
               center={event.coordinates}
               zoom={15}
               className="h-full w-full"
+              interactive={false}
             />
           </div>
-
-          {/* Action buttons — inline, scroll naturally */}
-          <div className="flex gap-2 mb-2">
-            <motion.button
-              onClick={handleMaybe}
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl font-bold text-sm"
-              style={{
-                background: attendStatus === 'maybe' ? '#FFF0E8' : 'white',
-                border: `1.5px solid ${attendStatus === 'maybe' ? '#E8651A' : 'rgba(0,0,0,0.1)'}`,
-                color: attendStatus === 'maybe' ? '#E8651A' : '#4B5563',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-              }}
-            >
-              {attendStatus === 'maybe' && <CheckMark size={12} />}
-              I might go
-            </motion.button>
-            <motion.button
-              onClick={handleConfirm}
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl font-bold text-sm"
-              style={{
-                background: attendStatus === 'going' ? '#F0FDF4' : 'white',
-                border: `1.5px solid ${attendStatus === 'going' ? '#16A34A' : 'rgba(0,0,0,0.1)'}`,
-                color: attendStatus === 'going' ? '#16A34A' : '#4B5563',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-              }}
-            >
-              {attendStatus === 'going' && <CheckCircle2 size={13} />}
-              Confirmed going
-            </motion.button>
-          </div>
-          <motion.button
-            onClick={onArrival}
-            whileTap={{ scale: 0.97 }}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm"
-            style={{
-              background: 'linear-gradient(135deg, #E8651A, #FF8C42)',
-              color: 'white',
-              boxShadow: '0 4px 16px rgba(232,101,26,0.35)',
-            }}
-          >
-            <Zap size={15} />
-            I'm at the spot
-          </motion.button>
         </div>
       </div>
+
+      {/* I'm at the spot — slides up above BottomNav when confirmed going */}
+      <AnimatePresence>
+        {attendStatus === 'going' && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 30 }}
+            style={{
+              position: 'absolute',
+              bottom: 100,
+              left: 0,
+              right: 0,
+              zIndex: 990,
+              padding: '10px 20px 4px',
+              background: 'transparent',
+            }}
+          >
+            <motion.button
+              onClick={onArrival}
+              whileTap={{ scale: 0.97 }}
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-base"
+              style={{
+                background: 'linear-gradient(135deg, #E8651A, #FF8C42)',
+                color: 'white',
+                boxShadow: '0 4px 20px rgba(232,101,26,0.4)',
+                letterSpacing: -0.3,
+              }}
+            >
+              <Zap size={17} />
+              I'm at the spot
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BottomNav mode={mode} currentScreen={currentScreen} onNavigate={onNavigate} />
     </motion.div>

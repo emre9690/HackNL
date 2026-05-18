@@ -54,6 +54,9 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
 
   const codeWord = event?.codeWord || 'LANTERN';
   const participants = event?.participants || ['Sophie', 'Liam', 'Marco', 'David'];
+  const alreadyConnectedToRequester = connections.some(
+    (c) => c.firstName === INCOMING_REQUEST.fromName && c.status === 'accepted'
+  );
 
   const handleRequestContact = (name: string) => {
     setRequestedIds((prev) => [...prev, name]);
@@ -248,7 +251,7 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
 
             <div className="flex-1 overflow-y-auto px-5 pb-6">
               {/* Incoming request */}
-              {incomingHandled === 'none' && (
+              {incomingHandled === 'none' && !alreadyConnectedToRequester && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}

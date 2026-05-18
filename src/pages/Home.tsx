@@ -133,7 +133,11 @@ export default function Home({
             );
           })}
         </div>
-        {/* Fade edge to hint at scroll */}
+        {/* Fade edges */}
+        <div
+          className="absolute top-0 left-0 h-full w-6 pointer-events-none"
+          style={{ background: 'linear-gradient(to left, transparent, #F7F3EE)' }}
+        />
         <div
           className="absolute top-0 right-0 h-full w-8 pointer-events-none"
           style={{ background: 'linear-gradient(to right, transparent, #F7F3EE)' }}
