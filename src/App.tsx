@@ -15,29 +15,32 @@ import EventDetail from './pages/EventDetail';
 import SavedEvents from './pages/SavedEvents';
 import Profile from './pages/Profile';
 
-import { Screen, AppMode, EventRoutine, UserPreferences, AIProfile, AISuggestion } from './types';
+import {
+  Screen, AppMode, EventRoutine, UserPreferences, AIProfile,
+  AISuggestion, Connection, AttendStatus,
+} from './types';
 import { events } from './data/events';
 import { aiSuggestions as initialSuggestions } from './data/demoUsers';
 
 const LS_PREFS = 'stadspas_prefs';
 const LS_PROFILE = 'stadspas_profile';
 const LS_SAVED = 'stadspas_saved';
+const LS_CONNECTIONS = 'stadspas_connections';
+
+const INITIAL_CONNECTIONS: Connection[] = [
+  { id: 'conn1', firstName: 'Ana', lastName: 'V.', eventId: 'ev4', eventTitle: 'Sketch Café', connectedAt: '2024-11-08' },
+  { id: 'conn2', firstName: 'Marcus', lastName: 'L.', eventId: 'ev1', eventTitle: 'Catan Night', connectedAt: '2024-11-15' },
+];
 
 function loadLS<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function saveLS<T>(key: string, value: T) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore
-  }
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
 }
 
 export default function App() {
@@ -53,20 +56,16 @@ export default function App() {
   const [savedEvents, setSavedEvents] = useState<EventRoutine[]>(
     loadLS<EventRoutine[]>(LS_SAVED) || []
   );
+  const [connections, setConnections] = useState<Connection[]>(
+    loadLS<Connection[]>(LS_CONNECTIONS) || INITIAL_CONNECTIONS
+  );
+  const [attendStatus, setAttendStatus] = useState<Record<string, AttendStatus>>({});
   const [suggestions, setSuggestions] = useState<AISuggestion[]>(initialSuggestions);
 
-  // Persist state
-  useEffect(() => {
-    if (userPreferences) saveLS(LS_PREFS, userPreferences);
-  }, [userPreferences]);
-
-  useEffect(() => {
-    if (aiProfile) saveLS(LS_PROFILE, aiProfile);
-  }, [aiProfile]);
-
-  useEffect(() => {
-    saveLS(LS_SAVED, savedEvents);
-  }, [savedEvents]);
+  useEffect(() => { if (userPreferences) saveLS(LS_PREFS, userPreferences); }, [userPreferences]);
+  useEffect(() => { if (aiProfile) saveLS(LS_PROFILE, aiProfile); }, [aiProfile]);
+  useEffect(() => { saveLS(LS_SAVED, savedEvents); }, [savedEvents]);
+  useEffect(() => { saveLS(LS_CONNECTIONS, connections); }, [connections]);
 
   const handleOnboardingComplete = (prefs: UserPreferences, profile: AIProfile) => {
     setUserPreferences(prefs);
@@ -82,8 +81,18 @@ export default function App() {
   const handleSaveEvent = (event: EventRoutine) => {
     setSavedEvents((prev) => {
       const exists = prev.find((e) => e.id === event.id);
-      if (exists) return prev.filter((e) => e.id !== event.id);
-      return [...prev, event];
+      return exists ? prev.filter((e) => e.id !== event.id) : [...prev, event];
+    });
+  };
+
+  const handleAttend = (eventId: string, status: AttendStatus) => {
+    setAttendStatus((prev) => ({ ...prev, [eventId]: status }));
+  };
+
+  const handleAddConnection = (conn: Connection) => {
+    setConnections((prev) => {
+      if (prev.some((c) => c.id === conn.id || c.firstName === conn.firstName)) return prev;
+      return [...prev, conn];
     });
   };
 
@@ -91,9 +100,12 @@ export default function App() {
     localStorage.removeItem(LS_PREFS);
     localStorage.removeItem(LS_PROFILE);
     localStorage.removeItem(LS_SAVED);
+    localStorage.removeItem(LS_CONNECTIONS);
     setUserPreferences(null);
     setAiProfile(null);
     setSavedEvents([]);
+    setConnections(INITIAL_CONNECTIONS);
+    setAttendStatus({});
     setSelectedEvent(null);
     setMode('resident');
     setCurrentScreen('landing');
@@ -101,26 +113,16 @@ export default function App() {
   }, []);
 
   const handleUpdateSuggestion = (id: string, status: 'approved' | 'rejected') => {
-    setSuggestions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status } : s))
-    );
+    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
   };
 
   const handleNavigate = (screen: Screen) => {
-    if (screen === 'arrival' && !selectedEvent) {
-      // Use first event as default for arrival demo
-      setSelectedEvent(events[0]);
-    }
+    if (screen === 'arrival' && !selectedEvent) setSelectedEvent(events[0]);
     setCurrentScreen(screen);
   };
 
-  const setScreenExternal = useCallback((screen: Screen) => {
-    setCurrentScreen(screen);
-  }, []);
-
-  const setModeExternal = useCallback((m: AppMode) => {
-    setMode(m);
-  }, []);
+  const setScreenExternal = useCallback((screen: Screen) => setCurrentScreen(screen), []);
+  const setModeExternal = useCallback((m: AppMode) => setMode(m), []);
 
   const isSaved = (event: EventRoutine) => savedEvents.some((e) => e.id === event.id);
 
@@ -128,10 +130,7 @@ export default function App() {
     if (mode === 'admin') {
       return (
         <>
-          <AdminDashboard
-            suggestions={suggestions}
-            onUpdateSuggestion={handleUpdateSuggestion}
-          />
+          <AdminDashboard suggestions={suggestions} onUpdateSuggestion={handleUpdateSuggestion} />
           <BottomNav mode="admin" currentScreen={currentScreen} onNavigate={handleNavigate} />
         </>
       );
@@ -146,6 +145,8 @@ export default function App() {
           <Onboarding
             onComplete={handleOnboardingComplete}
             onNavigate={setCurrentScreen}
+            initialPrefs={userPreferences}
+            isEditing={!!userPreferences}
           />
         );
 
@@ -168,9 +169,12 @@ export default function App() {
             onArrival={() => setCurrentScreen('arrival')}
             onSave={handleSaveEvent}
             isSaved={isSaved(selectedEvent)}
+            attendStatus={attendStatus[selectedEvent.id] || 'none'}
+            onAttend={(status) => handleAttend(selectedEvent.id, status)}
             onNavigate={handleNavigate}
             mode={mode}
             currentScreen={currentScreen}
+            userPreferences={userPreferences}
           />
         ) : null;
 
@@ -179,6 +183,8 @@ export default function App() {
           <ArrivalBadge
             event={selectedEvent || events[0]}
             onBack={() => setCurrentScreen(selectedEvent ? 'event-detail' : 'home')}
+            connections={connections}
+            onAddConnection={handleAddConnection}
           />
         );
 
@@ -186,12 +192,13 @@ export default function App() {
         return (
           <div className="absolute inset-0 flex flex-col" style={{ background: '#0d0d12' }}>
             <div className="px-5 pt-14 pb-3 flex-shrink-0">
-              <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-0.5">
-                Explore
-              </p>
+              <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-0.5">Explore</p>
               <h1 className="text-white font-bold text-xl">Map view</h1>
             </div>
-            <div className="flex-1 mx-4 mb-28 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div
+              className="flex-1 mx-4 mb-24 rounded-2xl overflow-hidden"
+              style={{ border: '1px solid rgba(255,255,255,0.08)', minHeight: 0 }}
+            >
               <MapView
                 events={events}
                 onEventClick={handleViewEvent}
@@ -225,6 +232,7 @@ export default function App() {
             onNavigate={handleNavigate}
             mode={mode}
             currentScreen={currentScreen}
+            connections={connections}
           />
         );
 

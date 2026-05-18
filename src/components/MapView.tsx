@@ -1,25 +1,36 @@
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { EventRoutine } from '../types';
 
-// Fix default marker icon paths for Vite
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
 
-const mintIcon = new L.Icon({
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+function createPulseIcon(color = '#4ade80') {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">
+        <div style="
+          position:absolute;
+          width:22px;height:22px;
+          border-radius:50%;
+          background:${color}22;
+          border:1.5px solid ${color}66;
+          animation:stadspas-pulse 2.2s ease-in-out infinite;
+        "></div>
+        <div style="
+          position:relative;
+          width:10px;height:10px;
+          border-radius:50%;
+          background:${color};
+          box-shadow:0 0 6px ${color}99;
+        "></div>
+      </div>
+    `,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -14],
+  });
+}
 
 interface MapViewProps {
   events: EventRoutine[];
@@ -41,7 +52,7 @@ export default function MapView({
       center={center}
       zoom={zoom}
       className={className}
-      style={{ background: '#1a1a1a' }}
+      style={{ background: '#1a1a2e' }}
       zoomControl={false}
     >
       <TileLayer
@@ -52,18 +63,35 @@ export default function MapView({
         <Marker
           key={event.id}
           position={event.coordinates}
-          icon={mintIcon}
+          icon={createPulseIcon()}
           eventHandlers={{
             click: () => onEventClick && onEventClick(event),
           }}
         >
-          <Popup>
-            <div className="text-sm">
-              <strong>{event.title}</strong>
-              <br />
-              <span className="text-gray-600">
-                {event.dayOfWeek} · {event.time}
-              </span>
+          <Popup className="stadspas-popup">
+            <div style={{ padding: '10px 14px', minWidth: 160 }}>
+              <p style={{ color: 'white', fontWeight: 700, fontSize: 13, margin: '0 0 3px', fontFamily: 'inherit', lineHeight: 1.3 }}>
+                {event.title}
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, margin: '0 0 5px', fontFamily: 'inherit' }}>
+                {event.location}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: '#4ade80', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                  {event.dayOfWeek} · {event.time}
+                </span>
+                <span style={{
+                  background: 'rgba(74,222,128,0.15)',
+                  color: '#4ade80',
+                  fontSize: 10,
+                  padding: '1px 6px',
+                  borderRadius: 99,
+                  border: '1px solid rgba(74,222,128,0.25)',
+                  fontFamily: 'inherit',
+                }}>
+                  {event.language}
+                </span>
+              </div>
             </div>
           </Popup>
         </Marker>
