@@ -14,9 +14,12 @@ export interface EventRoutine {
   codeWord: string;
   category: string;
   distanceKm: string;
+  participants: string[];
 }
 
 export interface UserPreferences {
+  firstName: string;
+  lastName: string;
   interests: string[];
   vibe: string;
   language: string;
@@ -44,6 +47,17 @@ export interface AISuggestion {
   suggestedAction: string;
   status: 'pending' | 'approved' | 'rejected';
 }
+
+export interface Connection {
+  id: string;
+  firstName: string;
+  lastName: string;
+  eventId: string;
+  eventTitle: string;
+  connectedAt: string;
+}
+
+export type AttendStatus = 'none' | 'maybe' | 'going';
 
 export type Screen =
   | 'landing'

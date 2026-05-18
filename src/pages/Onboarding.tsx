@@ -1,17 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Check } from 'lucide-react';
 import { UserPreferences, AIProfile, Screen } from '../types';
 
 interface OnboardingProps {
   onComplete: (prefs: UserPreferences, profile: AIProfile) => void;
   onNavigate: (screen: Screen) => void;
+  initialPrefs?: UserPreferences | null;
+  isEditing?: boolean;
 }
 
-const INTERESTS = [
-  'Calm', 'Active', 'Creative', 'Study', 'Games', 'Outdoors',
-  'Food & coffee', 'Language exchange', 'Music', 'Tech', 'Bouldering',
-  'Walking', 'Reading',
+const INTEREST_CATEGORIES = [
+  {
+    label: 'Movement',
+    color: '#f97316',
+    bg: 'rgba(249,115,22,0.15)',
+    border: 'rgba(249,115,22,0.4)',
+    items: ['Active', 'Bouldering', 'Walking', 'Outdoors'],
+  },
+  {
+    label: 'Creative & Arts',
+    color: '#a855f7',
+    bg: 'rgba(168,85,247,0.15)',
+    border: 'rgba(168,85,247,0.4)',
+    items: ['Creative', 'Music', 'Sketching'],
+  },
+  {
+    label: 'Mind & Learning',
+    color: '#3b82f6',
+    bg: 'rgba(59,130,246,0.15)',
+    border: 'rgba(59,130,246,0.4)',
+    items: ['Study', 'Tech', 'Reading'],
+  },
+  {
+    label: 'Social & Games',
+    color: '#4ade80',
+    bg: 'rgba(74,222,128,0.15)',
+    border: 'rgba(74,222,128,0.4)',
+    items: ['Games', 'Food & coffee', 'Language exchange'],
+  },
 ];
 
 const VIBES = ['Quiet', 'Social-light', 'Mixed', 'Energetic'];
@@ -22,8 +49,10 @@ const AREAS = [
   'Delfshaven', 'Noord', 'Zuid', 'Kop van Zuid',
 ];
 
-export default function Onboarding({ onComplete, onNavigate }: OnboardingProps) {
+export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEditing }: OnboardingProps) {
   const [step, setStep] = useState(0);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [vibe, setVibe] = useState('');
   const [language, setLanguage] = useState('');
@@ -32,16 +61,38 @@ export default function Onboarding({ onComplete, onNavigate }: OnboardingProps) 
   const [freeText, setFreeText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (initialPrefs) {
+      setFirstName(initialPrefs.firstName || '');
+      setLastName(initialPrefs.lastName || '');
+      setInterests(initialPrefs.interests || []);
+      setVibe(initialPrefs.vibe || '');
+      setLanguage(initialPrefs.language || '');
+      setAgeRange(initialPrefs.ageRange || '');
+      setArea(initialPrefs.area || '');
+      setFreeText(initialPrefs.freeText || '');
+    }
+  }, [initialPrefs]);
+
   const toggleInterest = (item: string) => {
     setInterests((prev) =>
       prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
     );
   };
 
+  const handleBack = () => {
+    if (step === 0 && isEditing) {
+      onNavigate('profile');
+    } else if (step > 0) {
+      setStep((s) => s - 1);
+    }
+  };
+
   const handleSubmit = async () => {
     setIsLoading(true);
-    const prefs: UserPreferences = { interests, vibe, language, ageRange, area, freeText };
-
+    const prefs: UserPreferences = {
+      firstName, lastName, interests, vibe, language, ageRange, area, freeText,
+    };
     try {
       const res = await fetch('/api/ai/profile', {
         method: 'POST',
@@ -51,11 +102,10 @@ export default function Onboarding({ onComplete, onNavigate }: OnboardingProps) 
       const profile: AIProfile = await res.json();
       onComplete(prefs, profile);
     } catch {
-      // Fallback mock
       onComplete(prefs, {
         archetype: 'The Curious Explorer',
-        summary: 'You enjoy low-pressure creative and social spaces, particularly around games, study, and outdoor activities.',
-        tags: ['games', 'study', 'outdoors', 'creative', 'calm'],
+        summary: 'You enjoy low-pressure creative and social spaces.',
+        tags: ['games', 'study', 'outdoors', 'creative'],
         recommendedCategories: ['Games', 'Study', 'Creative', 'Walking'],
       });
     } finally {
@@ -65,24 +115,22 @@ export default function Onboarding({ onComplete, onNavigate }: OnboardingProps) 
 
   const steps = [
     { title: 'What do you enjoy?', subtitle: 'Pick as many as you like.' },
-    { title: 'Your preferences', subtitle: 'Help us find the right spaces.' },
+    { title: 'About you', subtitle: 'Helps us find the right spaces.' },
     { title: 'Anything else?', subtitle: 'Optional — in your own words.' },
   ];
 
+  const showBack = step > 0 || isEditing;
+
   return (
-    <div
-      className="absolute inset-0 flex flex-col"
-      style={{ background: '#0d0d12', paddingTop: 60 }}
-    >
-      {/* Progress bar */}
-      <div className="px-6 mb-6 flex-shrink-0">
+    <div className="absolute inset-0 flex flex-col" style={{ background: '#0d0d12', paddingTop: 52 }}>
+      {/* Header */}
+      <div className="px-5 mb-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
-          {step > 0 && (
-            <button onClick={() => setStep((s) => s - 1)} className="text-white/40">
+          {showBack ? (
+            <button onClick={handleBack} className="text-white/40 p-1">
               <ArrowLeft size={18} />
             </button>
-          )}
-          {step === 0 && <div />}
+          ) : <div className="w-7" />}
           <p className="text-white/30 text-xs">{step + 1} / 3</p>
         </div>
         <div className="flex gap-1.5">
@@ -90,98 +138,143 @@ export default function Onboarding({ onComplete, onNavigate }: OnboardingProps) 
             <div
               key={i}
               className="flex-1 h-1 rounded-full transition-all duration-300"
-              style={{
-                background: i <= step ? '#4ade80' : 'rgba(255,255,255,0.1)',
-              }}
+              style={{ background: i <= step ? '#4ade80' : 'rgba(255,255,255,0.1)' }}
             />
           ))}
         </div>
-        <h2 className="text-white font-bold text-xl mt-4 mb-1">{steps[step].title}</h2>
+        <h2 className="text-white font-bold text-xl mt-4 mb-0.5">{steps[step].title}</h2>
         <p className="text-white/40 text-sm">{steps[step].subtitle}</p>
       </div>
 
-      {/* Step content */}
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 pb-6">
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div
               key="step0"
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.22 }}
+              className="flex flex-col gap-5"
             >
-              <div className="flex flex-wrap gap-2">
-                {INTERESTS.map((item) => {
-                  const selected = interests.includes(item);
-                  return (
-                    <button
-                      key={item}
-                      onClick={() => toggleInterest(item)}
-                      className="px-4 py-2 rounded-full text-sm font-medium transition-all"
-                      style={{
-                        background: selected ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.06)',
-                        border: `1px solid ${selected ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                        color: selected ? '#4ade80' : 'rgba(255,255,255,0.6)',
-                      }}
-                    >
-                      {item}
-                    </button>
-                  );
-                })}
-              </div>
+              {INTEREST_CATEGORIES.map((cat) => (
+                <div key={cat.label}>
+                  <p
+                    className="text-xs font-semibold uppercase tracking-wider mb-2.5"
+                    style={{ color: cat.color }}
+                  >
+                    {cat.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {cat.items.map((item) => {
+                      const selected = interests.includes(item);
+                      return (
+                        <motion.button
+                          key={item}
+                          onClick={() => toggleInterest(item)}
+                          whileTap={{ scale: 0.88 }}
+                          whileHover={{ scale: 1.04 }}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-colors"
+                          style={{
+                            background: selected ? cat.bg : 'rgba(255,255,255,0.06)',
+                            border: `1px solid ${selected ? cat.border : 'rgba(255,255,255,0.1)'}`,
+                            color: selected ? cat.color : 'rgba(255,255,255,0.55)',
+                          }}
+                        >
+                          {selected && (
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                            >
+                              <Check size={11} />
+                            </motion.span>
+                          )}
+                          {item}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              <AnimatePresence>
+                {interests.length > 0 && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-white/30 text-xs"
+                  >
+                    {interests.length} selected
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
           {step === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.22 }}
               className="flex flex-col gap-5"
             >
-              <SelectGroup
-                label="Vibe"
-                options={VIBES}
-                value={vibe}
-                onChange={setVibe}
-              />
-              <SelectGroup
-                label="Language"
-                options={LANGUAGES}
-                value={language}
-                onChange={setLanguage}
-              />
-              <SelectGroup
-                label="Age range"
-                options={AGE_RANGES}
-                value={ageRange}
-                onChange={setAgeRange}
-              />
-              <SelectGroup
-                label="Your area"
-                options={AREAS}
-                value={area}
-                onChange={setArea}
-              />
+              {/* Name */}
+              <div>
+                <p className="text-white/50 text-xs font-medium uppercase tracking-wider mb-2.5">
+                  Your name
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="flex-1 rounded-xl px-3.5 py-2.5 text-sm outline-none placeholder:text-white/25"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.85)',
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="flex-1 rounded-xl px-3.5 py-2.5 text-sm outline-none placeholder:text-white/25"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.85)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <SelectGroup label="Vibe" options={VIBES} value={vibe} onChange={setVibe} />
+              <SelectGroup label="Language" options={LANGUAGES} value={language} onChange={setLanguage} />
+              <SelectGroup label="Age range" options={AGE_RANGES} value={ageRange} onChange={setAgeRange} />
+              <SelectGroup label="Your area" options={AREAS} value={area} onChange={setArea} />
             </motion.div>
           )}
 
           {step === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.22 }}
             >
               <textarea
                 value={freeText}
                 onChange={(e) => setFreeText(e.target.value)}
                 placeholder="Example: I like quiet cafés, board games, and I'm new to Rotterdam."
-                className="w-full rounded-2xl p-4 text-sm text-white/80 resize-none outline-none"
+                className="w-full rounded-2xl p-4 text-sm resize-none outline-none placeholder:text-white/25"
                 rows={5}
                 style={{
                   background: 'rgba(255,255,255,0.05)',
@@ -197,8 +290,8 @@ export default function Onboarding({ onComplete, onNavigate }: OnboardingProps) 
         </AnimatePresence>
       </div>
 
-      {/* Next / Submit button */}
-      <div className="px-6 pb-10 flex-shrink-0">
+      {/* CTA */}
+      <div className="px-5 pb-10 flex-shrink-0">
         {step < 2 ? (
           <button
             onClick={() => setStep((s) => s + 1)}
@@ -220,10 +313,7 @@ export default function Onboarding({ onComplete, onNavigate }: OnboardingProps) 
             style={{ background: '#4ade80', color: '#0a0a0f' }}
           >
             {isLoading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Building your profile...
-              </>
+              <><Loader2 size={16} className="animate-spin" /> Building your profile...</>
             ) : (
               <>Create my city profile <ArrowRight size={15} /></>
             )}
@@ -244,23 +334,24 @@ interface SelectGroupProps {
 function SelectGroup({ label, options, value, onChange }: SelectGroupProps) {
   return (
     <div>
-      <p className="text-white/50 text-xs font-medium uppercase tracking-wider mb-2">{label}</p>
+      <p className="text-white/50 text-xs font-medium uppercase tracking-wider mb-2.5">{label}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => {
           const selected = value === opt;
           return (
-            <button
+            <motion.button
               key={opt}
               onClick={() => onChange(opt)}
-              className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+              whileTap={{ scale: 0.9 }}
+              className="px-3.5 py-2 rounded-full text-sm font-medium transition-colors"
               style={{
-                background: selected ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.06)',
-                border: `1px solid ${selected ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                color: selected ? '#4ade80' : 'rgba(255,255,255,0.6)',
+                background: selected ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${selected ? 'rgba(74,222,128,0.45)' : 'rgba(255,255,255,0.1)'}`,
+                color: selected ? '#4ade80' : 'rgba(255,255,255,0.55)',
               }}
             >
               {opt}
-            </button>
+            </motion.button>
           );
         })}
       </div>
