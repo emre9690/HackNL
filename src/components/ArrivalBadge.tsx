@@ -8,31 +8,69 @@ interface ArrivalBadgeProps {
   onBack: () => void;
   connections: Connection[];
   onAddConnection: (conn: Connection) => void;
+  onUpdateConnection: (id: string, status: 'accepted') => void;
+  incomingHandled: 'none' | 'accepted' | 'declined';
+  onSetIncomingHandled: (v: 'none' | 'accepted' | 'declined') => void;
 }
 
 type BadgeView = 'badge' | 'join' | 'leave';
 
 const FAKE_PHONES: Record<string, string> = {
-  Sophie: '+31 6 12 34 56 78',
-  Liam: '+31 6 23 45 67 89',
-  Yuki: '+31 6 34 56 78 90',
-  Marco: '+31 6 45 67 89 01',
-  David: '+31 6 56 78 90 12',
-  Emma: '+31 6 67 89 01 23',
-  Noah: '+31 6 78 90 12 34',
-  Anika: '+31 6 89 01 23 45',
-  Jin: '+31 6 90 12 34 56',
-  Jake: '+31 6 11 22 33 44',
-  Priya: '+31 6 22 33 44 55',
-  Finn: '+31 6 33 44 55 66',
-  Sara: '+31 6 44 55 66 77',
-  Ana: '+31 6 55 66 77 88',
-  Tom: '+31 6 66 77 88 99',
-  Mei: '+31 6 77 88 99 00',
-  Iris: '+31 6 88 99 00 11',
+  Sophie: '+31 6 12 34 56 78',   Liam: '+31 6 23 45 67 89',
+  Yuki: '+31 6 34 56 78 90',     Marco: '+31 6 45 67 89 01',
+  David: '+31 6 56 78 90 12',    Emma: '+31 6 67 89 01 23',
+  Noah: '+31 6 78 90 12 34',     Anika: '+31 6 89 01 23 45',
+  Jin: '+31 6 90 12 34 56',      Jake: '+31 6 11 22 33 44',
+  Priya: '+31 6 22 33 44 55',    Finn: '+31 6 33 44 55 66',
+  Sara: '+31 6 44 55 66 77',     Ana: '+31 6 55 66 77 88',
+  Tom: '+31 6 66 77 88 99',      Mei: '+31 6 77 88 99 00',
+  Iris: '+31 6 88 99 00 11',     Roos: '+31 6 13 24 35 46',
+  Sven: '+31 6 24 35 46 57',     Fatima: '+31 6 35 46 57 68',
+  Lars: '+31 6 46 57 68 79',     Daan: '+31 6 57 68 79 80',
+  Clara: '+31 6 68 79 80 91',    Ben: '+31 6 19 20 21 22',
+  Nora: '+31 6 20 31 42 53',     Bram: '+31 6 31 42 53 64',
+  Sarah: '+31 6 42 53 64 75',    Mohammed: '+31 6 53 64 75 86',
+  Lisa: '+31 6 64 75 86 97',     Viktor: '+31 6 15 26 37 48',
+  Chen: '+31 6 26 37 48 59',     Kees: '+31 6 37 48 59 60',
+  Jade: '+31 6 48 59 60 71',     Remi: '+31 6 59 60 71 82',
+  Nadia: '+31 6 60 71 82 93',    Carlos: '+31 6 17 18 29 30',
+  Pieter: '+31 6 18 29 30 41',   Lena: '+31 6 29 30 41 52',
+  Hamid: '+31 6 30 41 52 63',    Ingrid: '+31 6 41 52 63 74',
+  Astrid: '+31 6 52 63 74 85',   Sam: '+31 6 63 74 85 96',
+  Kofi: '+31 6 14 15 16 17',     Femke: '+31 6 25 36 47 58',
+  Isabelle: '+31 6 36 47 58 69', Tariq: '+31 6 47 58 69 70',
+  Rosa: '+31 6 58 69 70 81',     Javier: '+31 6 69 70 81 92',
+  Mira: '+31 6 70 81 92 03',     Stefan: '+31 6 16 27 38 49',
+  Henrik: '+31 6 27 38 49 50',   Anke: '+31 6 38 49 50 61',
+  Joel: '+31 6 49 50 61 72',     Zara: '+31 6 50 61 72 83',
+  Wouter: '+31 6 61 72 83 94',   Nathalie: '+31 6 72 83 94 05',
+  Kevin: '+31 6 83 94 05 16',    Aryan: '+31 6 21 32 43 54',
+  Giulia: '+31 6 32 43 54 65',   Tim: '+31 6 43 54 65 76',
+  Esther: '+31 6 54 65 76 87',   Hannah: '+31 6 65 76 87 98',
+  Oliver: '+31 6 76 87 98 09',   Pita: '+31 6 87 98 09 10',
+  Demi: '+31 6 11 13 15 17',     Roy: '+31 6 12 14 16 18',
+  Ximena: '+31 6 19 21 23 25',   Jeroen: '+31 6 20 22 24 26',
+  Simone: '+31 6 28 30 32 34',   Ali: '+31 6 31 33 35 37',
+  Floor: '+31 6 34 36 38 40',    Koen: '+31 6 37 39 41 43',
+  Pete: '+31 6 40 42 44 46',     Marta: '+31 6 43 45 47 49',
+  Adil: '+31 6 46 48 50 52',     Claire: '+31 6 49 51 53 55',
+  Diego: '+31 6 52 54 56 58',    Marek: '+31 6 55 57 59 61',
+  Joris: '+31 6 58 60 62 64',    Selma: '+31 6 61 63 65 67',
+  Willem: '+31 6 64 66 68 70',   Lara: '+31 6 67 69 71 73',
+  Theo: '+31 6 70 72 74 76',     Bas: '+31 6 73 75 77 79',
+  Marleen: '+31 6 76 78 80 82',  Yusuf: '+31 6 79 81 83 85',
+  Tine: '+31 6 82 84 86 88',
 };
 
-const INCOMING_REQUEST = { id: 'req1', fromName: 'Yuki', phone: '+31 6 34 56 78 90', eventTitle: 'Sketch Café' };
+// One person per event who sends an incoming contact request
+const EVENT_INCOMING: Record<string, string> = {
+  ev1: 'Sophie',   ev2: 'Emma',     ev3: 'Fatima',  ev4: 'Tom',
+  ev5: 'Priya',    ev6: 'Nora',     ev7: 'Bram',    ev8: 'Viktor',
+  ev9: 'Jade',     ev10: 'Lena',    ev11: 'Sam',    ev12: 'Femke',
+  ev13: 'Rosa',    ev14: 'Anke',    ev15: 'Nathalie', ev16: 'Giulia',
+  ev17: 'Hannah',  ev18: 'Demi',    ev19: 'Simone', ev20: 'Marta',
+  ev21: 'Marek',   ev22: 'Selma',   ev23: 'Lara',   ev24: 'Marleen',
+};
 
 function CheckIcon({ size }: { size: number }) {
   return (
@@ -42,10 +80,9 @@ function CheckIcon({ size }: { size: number }) {
   );
 }
 
-export default function ArrivalBadge({ event, onBack, connections, onAddConnection }: ArrivalBadgeProps) {
+export default function ArrivalBadge({ event, onBack, connections, onAddConnection, onUpdateConnection, incomingHandled, onSetIncomingHandled }: ArrivalBadgeProps) {
   const [view, setView] = useState<BadgeView>('badge');
   const [requestedIds, setRequestedIds] = useState<string[]>([]);
-  const [incomingHandled, setIncomingHandled] = useState<'none' | 'accepted' | 'declined'>('none');
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const [hoverStar, setHoverStar] = useState(0);
@@ -54,14 +91,17 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
 
   const codeWord = event?.codeWord || 'LANTERN';
   const participants = event?.participants || ['Sophie', 'Liam', 'Marco', 'David'];
-  const alreadyConnectedToRequester = connections.some(
-    (c) => c.firstName === INCOMING_REQUEST.fromName && c.status === 'accepted'
-  );
+  const incomingName = event?.id ? EVENT_INCOMING[event.id] : null;
+  const incomingPhone = incomingName ? (FAKE_PHONES[incomingName] || '+31 6 00 11 22 33') : null;
+  const alreadyConnectedToRequester = incomingName
+    ? connections.some((c) => c.firstName === incomingName && c.status === 'accepted')
+    : false;
 
   const handleRequestContact = (name: string) => {
+    const connId = `conn-${Date.now()}`;
     setRequestedIds((prev) => [...prev, name]);
     const conn: Connection = {
-      id: `conn-${Date.now()}`,
+      id: connId,
       firstName: name,
       lastName: '',
       phone: FAKE_PHONES[name] || '+31 6 00 00 00 00',
@@ -71,15 +111,17 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
       status: 'pending',
     };
     onAddConnection(conn);
+    setTimeout(() => onUpdateConnection(connId, 'accepted'), 2000);
   };
 
   const handleAcceptIncoming = () => {
-    setIncomingHandled('accepted');
+    if (!incomingName || !incomingPhone) return;
+    onSetIncomingHandled('accepted');
     onAddConnection({
       id: `conn-inc-${Date.now()}`,
-      firstName: INCOMING_REQUEST.fromName,
+      firstName: incomingName,
       lastName: '',
-      phone: INCOMING_REQUEST.phone,
+      phone: incomingPhone,
       eventId: event?.id || '',
       eventTitle: event?.title || '',
       connectedAt: new Date().toISOString().split('T')[0],
@@ -251,7 +293,7 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
 
             <div className="flex-1 overflow-y-auto px-5 pb-6">
               {/* Incoming request */}
-              {incomingHandled === 'none' && !alreadyConnectedToRequester && (
+              {incomingHandled === 'none' && incomingName && !alreadyConnectedToRequester && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -265,16 +307,16 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
                         style={{ background: '#FFF0E8', color: '#E8651A', border: '1.5px solid rgba(232,101,26,0.3)' }}>
-                        {INCOMING_REQUEST.fromName[0]}
+                        {incomingName[0]}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold" style={{ color: '#1A1A2E' }}>{INCOMING_REQUEST.fromName}</p>
-                        <p className="text-xs" style={{ color: '#9CA3AF' }}>from {INCOMING_REQUEST.eventTitle}</p>
+                        <p className="text-sm font-semibold" style={{ color: '#1A1A2E' }}>{incomingName}</p>
+                        <p className="text-xs" style={{ color: '#9CA3AF' }}>wants to connect here</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => setIncomingHandled('declined')}
+                        onClick={() => onSetIncomingHandled('declined')}
                         className="px-3 py-1.5 rounded-xl text-xs font-semibold"
                         style={{ background: 'white', color: '#6B7280', border: '1px solid rgba(0,0,0,0.1)' }}
                       >
@@ -291,17 +333,17 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
                   </div>
                 </motion.div>
               )}
-              {incomingHandled === 'accepted' && (
+              {incomingHandled === 'accepted' && incomingName && (
                 <div className="rounded-2xl p-3 mb-5 flex items-center gap-2"
                   style={{ background: '#F0FDF4', border: '1px solid rgba(22,163,74,0.2)' }}>
                   <CheckIcon size={14} />
                   <div>
                     <p className="text-sm font-semibold" style={{ color: '#16A34A' }}>
-                      Connected with {INCOMING_REQUEST.fromName}
+                      Connected with {incomingName}
                     </p>
                     <div className="flex items-center gap-1 mt-0.5">
                       <Phone size={11} color="#16A34A" />
-                      <p className="text-xs" style={{ color: '#16A34A' }}>{INCOMING_REQUEST.phone}</p>
+                      <p className="text-xs" style={{ color: '#16A34A' }}>{incomingPhone}</p>
                     </div>
                   </div>
                 </div>

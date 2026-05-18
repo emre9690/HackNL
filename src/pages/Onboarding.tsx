@@ -4,6 +4,69 @@ import { ArrowRight, ArrowLeft, Loader2, Check, Plus, X } from 'lucide-react';
 
 import { UserPreferences, AIProfile, Screen } from '../types';
 
+function generateProfile(prefs: UserPreferences): AIProfile {
+  const lower = prefs.interests.map((i) => i.toLowerCase());
+
+  const MOVEMENT = ['running', 'cycling', 'bouldering', 'climbing', 'swimming', 'yoga', 'football', 'basketball', 'tennis', 'badminton', 'dance', 'martial arts', 'skateboarding', 'crossfit', 'volleyball', 'hiking', 'walking', 'sailing'];
+  const CREATIVE = ['drawing', 'painting', 'sketching', 'photography', 'music', 'guitar', 'piano', 'singing', 'dj-ing', 'film', 'theatre', 'improv', 'writing', 'poetry', 'ceramics', 'knitting', 'graphic design', 'street art'];
+  const MIND = ['study', 'coding', 'reading', 'languages', 'philosophy', 'debating', 'science', 'history', 'mathematics', 'trivia', 'puzzles', 'astronomy', 'psychology', 'investing'];
+  const GAMES = ['board games', 'card games', 'chess', 'catan', 'd&d', 'tabletop rpg', 'warhammer', 'magic: the gathering', 'go', 'backgammon', 'escape rooms', 'trivia nights', 'strategy games'];
+  const SOCIAL = ['food & coffee', 'cooking', 'baking', 'wine', 'craft beer', 'language exchange', 'volunteering', 'community garden', 'movie nights', 'karaoke', 'concerts', 'museums', 'open mic', 'cultural events'];
+
+  const hasMovement = lower.some((i) => MOVEMENT.includes(i));
+  const hasCreative = lower.some((i) => CREATIVE.includes(i));
+  const hasMind = lower.some((i) => MIND.includes(i));
+  const hasGames = lower.some((i) => GAMES.includes(i));
+  const hasSocial = lower.some((i) => SOCIAL.includes(i));
+  const typeCount = [hasMovement, hasCreative, hasMind, hasGames, hasSocial].filter(Boolean).length;
+
+  let archetype: string;
+  let summary: string;
+  let recommendedCategories: string[];
+
+  if (hasGames && hasMind && !hasMovement && !hasSocial) {
+    archetype = 'The Thoughtful Strategist';
+    summary = 'You gravitate towards intellectually stimulating spaces — board games, study sessions, and strategy nights are your natural habitat. You prefer depth over breadth.';
+    recommendedCategories = ['Board games', 'Study', 'Chess'];
+  } else if (hasCreative && hasSocial && !hasGames) {
+    archetype = 'The Creative Connector';
+    summary = 'You thrive where creativity meets community. Art sessions, cultural events, and food-focused meetups feel natural to you.';
+    recommendedCategories = ['Drawing', 'Photography', 'Language exchange'];
+  } else if (hasMovement && !hasCreative && !hasMind && !hasSocial) {
+    archetype = 'The Active Explorer';
+    summary = 'Movement is your way into the city. You prefer routines with a physical element — walks, climbs, or cycling with people going your pace.';
+    recommendedCategories = ['Walking', 'Bouldering', 'Running'];
+  } else if (hasMind && hasSocial && !hasGames && !hasMovement) {
+    archetype = 'The Curious Networker';
+    summary = 'Conversations that go somewhere are your thing. Study groups, language exchanges, and knowledge-sharing events are where you connect best.';
+    recommendedCategories = ['Study', 'Language exchange', 'Tech'];
+  } else if (hasCreative && hasMovement) {
+    archetype = 'The Expressive Mover';
+    summary = 'You blend creativity with activity — dance, photography walks, or outdoor sketching sessions suit you well.';
+    recommendedCategories = ['Dance', 'Photography', 'Walking'];
+  } else if (hasGames && hasSocial) {
+    archetype = 'The Social Game-Changer';
+    summary = 'You enjoy spaces that mix play with connection. Game nights, trivia evenings, and casual meetups are where you feel at home.';
+    recommendedCategories = ['Board games', 'Language exchange', 'Food & coffee'];
+  } else if (typeCount >= 3) {
+    archetype = 'The Urban Generalist';
+    summary = 'You\'re at home in any corner of the city. Your wide range of interests means you find something worthwhile in almost any space you walk into.';
+    recommendedCategories = prefs.interests.slice(0, 3);
+  } else if (prefs.vibe === 'Quiet' || prefs.vibe === 'Social-light') {
+    archetype = 'The Quiet Regular';
+    summary = 'You prefer spaces where showing up is enough. Low-pressure, recurring routines where you can ease in at your own pace suit you best.';
+    recommendedCategories = ['Study', 'Reading', 'Walking'];
+  } else {
+    archetype = 'The Curious Explorer';
+    summary = 'You enjoy discovering what the city offers — one low-key routine at a time.';
+    recommendedCategories = prefs.interests.slice(0, 3);
+  }
+
+  const tags = lower.slice(0, 6).map((i) => i.replace(/ & /g, '-').replace(/ /g, '-'));
+
+  return { archetype, summary, tags, recommendedCategories };
+}
+
 interface OnboardingProps {
   onComplete: (prefs: UserPreferences, profile: AIProfile) => void;
   onNavigate: (screen: Screen) => void;
@@ -117,24 +180,10 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
     const prefs: UserPreferences = {
       firstName, lastName, phone, interests, vibe, language, ageRange, area, freeText,
     };
-    try {
-      const res = await fetch('/api/ai/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(prefs),
-      });
-      const profile: AIProfile = await res.json();
-      onComplete(prefs, profile);
-    } catch {
-      onComplete(prefs, {
-        archetype: 'The Curious Explorer',
-        summary: 'You enjoy low-pressure creative and social spaces.',
-        tags: interests.slice(0, 5).map((i) => i.toLowerCase()),
-        recommendedCategories: interests.slice(0, 4),
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    await new Promise((r) => setTimeout(r, 520));
+    const profile = generateProfile(prefs);
+    onComplete(prefs, profile);
+    setIsLoading(false);
   };
 
   const showBack = step > 0 || isEditing;

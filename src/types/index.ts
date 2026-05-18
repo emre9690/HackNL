@@ -47,6 +47,7 @@ export interface AISuggestion {
   reason: string;
   suggestedAction: string;
   status: 'pending' | 'approved' | 'rejected';
+  assignedHost?: { name: string; role: string };
 }
 
 export interface Connection {
