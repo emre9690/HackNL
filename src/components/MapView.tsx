@@ -76,6 +76,7 @@ interface MapViewProps {
   zoom?: number;
   className?: string;
   showLegend?: boolean;
+  interactive?: boolean;
 }
 
 export default function MapView({
@@ -85,15 +86,26 @@ export default function MapView({
   zoom = 13,
   className = 'h-full w-full',
   showLegend = false,
+  interactive = true,
 }: MapViewProps) {
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{
+      position: 'relative', width: '100%', height: '100%',
+      isolation: 'isolate',
+      overflow: 'hidden',
+      pointerEvents: interactive ? 'auto' : 'none',
+    }}>
       <MapContainer
         center={center}
         zoom={zoom}
         className={className}
         style={{ background: '#e8e0d8' }}
         zoomControl={false}
+        dragging={interactive}
+        scrollWheelZoom={interactive}
+        touchZoom={interactive}
+        doubleClickZoom={interactive}
+        keyboard={interactive}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

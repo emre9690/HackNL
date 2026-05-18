@@ -100,13 +100,11 @@ export default function App() {
       const current = d[eventId] || { considering: 0, going: 0 };
       let { considering, going } = current;
 
-      // Undo previous
       if (prev === 'maybe') considering -= 1;
-      if (prev === 'going') { going -= 1; considering -= 1; }
+      if (prev === 'going') going -= 1;
 
-      // Apply new
       if (newStatus === 'maybe') considering += 1;
-      if (newStatus === 'going') { going += 1; considering += 1; }
+      if (newStatus === 'going') going += 1;
 
       return { ...d, [eventId]: { considering, going } };
     });

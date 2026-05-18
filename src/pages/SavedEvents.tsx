@@ -22,15 +22,15 @@ export default function SavedEvents({
   return (
     <motion.div
       className="absolute inset-0 flex flex-col"
-      style={{ background: '#0d0d12' }}
+      style={{ background: '#F7F3EE' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
       <div className="px-5 pt-14 pb-4 flex-shrink-0">
-        <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-1">Saved</p>
-        <h1 className="text-white font-bold text-xl">Your saved routines</h1>
+        <p className="text-xs font-bold uppercase tracking-wider mb-0.5" style={{ color: '#9CA3AF' }}>Saved</p>
+        <h1 className="font-black text-xl" style={{ color: '#1A1A2E', letterSpacing: -0.5 }}>Your saved routines</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-28">
@@ -43,19 +43,19 @@ export default function SavedEvents({
           >
             <div
               className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
             >
-              <Bookmark size={24} color="rgba(255,255,255,0.2)" />
+              <Bookmark size={24} color="#9CA3AF" />
             </div>
-            <p className="text-white/30 text-sm mb-1">Nothing saved yet.</p>
-            <p className="text-white/20 text-xs">Explore nearby spaces.</p>
+            <p className="text-sm font-semibold mb-1" style={{ color: '#4B5563' }}>Nothing saved yet.</p>
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>Tap the bookmark icon on any event.</p>
             <button
               onClick={() => onNavigate('home')}
-              className="mt-4 px-5 py-2 rounded-full text-xs font-medium"
+              className="mt-4 px-5 py-2 rounded-full text-xs font-bold"
               style={{
-                background: 'rgba(74,222,128,0.1)',
-                border: '1px solid rgba(74,222,128,0.25)',
-                color: '#4ade80',
+                background: '#FFF0E8',
+                border: '1px solid rgba(232,101,26,0.25)',
+                color: '#E8651A',
               }}
             >
               Browse spaces
