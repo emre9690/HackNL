@@ -26,6 +26,9 @@ const LS_PREFS = 'stadkompas_prefs';
 const LS_PROFILE = 'stadkompas_profile';
 const LS_SAVED = 'stadkompas_saved';
 const LS_CONNECTIONS = 'stadkompas_connections';
+const LS_ATTEND_STATUS = 'stadkompas_attend_status';
+const LS_ATTEND_DELTA = 'stadkompas_attend_delta';
+const LS_INCOMING = 'stadkompas_incoming';
 
 const INITIAL_CONNECTIONS: Connection[] = [
   {
@@ -51,7 +54,9 @@ function saveLS<T>(key: string, value: T) {
 }
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
+  const [currentScreen, setCurrentScreen] = useState<Screen>(
+    loadLS<UserPreferences>(LS_PREFS) ? 'home' : 'landing'
+  );
   const [mode, setMode] = useState<AppMode>('resident');
   const [selectedEvent, setSelectedEvent] = useState<EventRoutine | null>(null);
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(
@@ -66,14 +71,24 @@ export default function App() {
   const [connections, setConnections] = useState<Connection[]>(
     loadLS<Connection[]>(LS_CONNECTIONS) || INITIAL_CONNECTIONS
   );
-  const [attendStatus, setAttendStatus] = useState<Record<string, AttendStatus>>({});
-  const [attendDelta, setAttendDelta] = useState<Record<string, { considering: number; going: number }>>({});
+  const [attendStatus, setAttendStatus] = useState<Record<string, AttendStatus>>(
+    loadLS<Record<string, AttendStatus>>(LS_ATTEND_STATUS) || {}
+  );
+  const [attendDelta, setAttendDelta] = useState<Record<string, { considering: number; going: number }>>(
+    loadLS<Record<string, { considering: number; going: number }>>(LS_ATTEND_DELTA) || {}
+  );
+  const [incomingHandled, setIncomingHandled] = useState<'none' | 'accepted' | 'declined'>(
+    loadLS<'none' | 'accepted' | 'declined'>(LS_INCOMING) || 'none'
+  );
   const [suggestions, setSuggestions] = useState<AISuggestion[]>(initialSuggestions);
 
   useEffect(() => { if (userPreferences) saveLS(LS_PREFS, userPreferences); }, [userPreferences]);
   useEffect(() => { if (aiProfile) saveLS(LS_PROFILE, aiProfile); }, [aiProfile]);
   useEffect(() => { saveLS(LS_SAVED, savedEvents); }, [savedEvents]);
   useEffect(() => { saveLS(LS_CONNECTIONS, connections); }, [connections]);
+  useEffect(() => { saveLS(LS_ATTEND_STATUS, attendStatus); }, [attendStatus]);
+  useEffect(() => { saveLS(LS_ATTEND_DELTA, attendDelta); }, [attendDelta]);
+  useEffect(() => { saveLS(LS_INCOMING, incomingHandled); }, [incomingHandled]);
 
   const handleOnboardingComplete = (prefs: UserPreferences, profile: AIProfile) => {
     setUserPreferences(prefs);
@@ -117,17 +132,25 @@ export default function App() {
     });
   };
 
+  const handleUpdateConnection = (id: string, status: 'accepted') => {
+    setConnections((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
+  };
+
   const handleReset = useCallback(() => {
     localStorage.removeItem(LS_PREFS);
     localStorage.removeItem(LS_PROFILE);
     localStorage.removeItem(LS_SAVED);
     localStorage.removeItem(LS_CONNECTIONS);
+    localStorage.removeItem(LS_ATTEND_STATUS);
+    localStorage.removeItem(LS_ATTEND_DELTA);
+    localStorage.removeItem(LS_INCOMING);
     setUserPreferences(null);
     setAiProfile(null);
     setSavedEvents([]);
     setConnections(INITIAL_CONNECTIONS);
     setAttendStatus({});
     setAttendDelta({});
+    setIncomingHandled('none');
     setSelectedEvent(null);
     setMode('resident');
     setCurrentScreen('landing');
@@ -211,6 +234,9 @@ export default function App() {
             onBack={() => setCurrentScreen(selectedEvent ? 'event-detail' : 'home')}
             connections={connections}
             onAddConnection={handleAddConnection}
+            onUpdateConnection={handleUpdateConnection}
+            incomingHandled={incomingHandled}
+            onSetIncomingHandled={setIncomingHandled}
           />
         );
 
@@ -247,6 +273,7 @@ export default function App() {
           <SavedEvents
             savedEvents={savedEvents}
             onViewEvent={handleViewEvent}
+            onSaveEvent={handleSaveEvent}
             onNavigate={handleNavigate}
             mode={mode}
             currentScreen={currentScreen}
@@ -264,6 +291,7 @@ export default function App() {
             mode={mode}
             currentScreen={currentScreen}
             connections={connections}
+            onUpdateConnection={handleUpdateConnection}
           />
         );
 

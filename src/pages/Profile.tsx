@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Edit3, RotateCcw, User, Link2, Phone, Clock } from 'lucide-react';
+import { Edit3, RotateCcw, User, Link2, Phone, Check } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { UserPreferences, AIProfile, Screen, AppMode, Connection } from '../types';
 
@@ -13,6 +13,7 @@ interface ProfileProps {
   mode: AppMode;
   currentScreen: Screen;
   connections: Connection[];
+  onUpdateConnection: (id: string, status: 'accepted') => void;
 }
 
 const tagColors = [
@@ -26,7 +27,7 @@ const tagColors = [
 
 export default function Profile({
   userPreferences, aiProfile, onEditPreferences, onReset,
-  onNavigate, mode, currentScreen, connections,
+  onNavigate, mode, currentScreen, connections, onUpdateConnection,
 }: ProfileProps) {
   const [tab, setTab] = useState<'overview' | 'connections'>('overview');
 
@@ -96,6 +97,40 @@ export default function Profile({
         <div className="px-5 flex flex-col gap-4">
           {tab === 'overview' && (
             <>
+              {aiProfile && (
+                <div
+                  className="rounded-2xl p-4"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFF0E8 0%, #FFF8F2 100%)',
+                    border: '1.5px solid rgba(232,101,26,0.25)',
+                    boxShadow: '0 2px 8px rgba(232,101,26,0.1)',
+                  }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8651A' }}>
+                    Your city profile
+                  </p>
+                  <p className="font-black text-lg leading-tight mb-2" style={{ color: '#1A1A2E', letterSpacing: -0.3 }}>
+                    {aiProfile.archetype}
+                  </p>
+                  <p className="text-xs leading-relaxed mb-3" style={{ color: '#4B5563' }}>
+                    {aiProfile.summary}
+                  </p>
+                  {aiProfile.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {aiProfile.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] px-2.5 py-1 rounded-full font-semibold"
+                          style={{ background: 'rgba(232,101,26,0.12)', color: '#E8651A' }}
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {userPreferences && userPreferences.interests.length > 0 && (
                 <div className="rounded-2xl p-4"
                   style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
@@ -133,23 +168,6 @@ export default function Profile({
                         <span className="text-sm" style={{ color: '#9CA3AF' }}>{pref.label}</span>
                         <span className="text-sm font-semibold" style={{ color: '#1A1A2E' }}>{pref.value}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {aiProfile && aiProfile.tags.length > 0 && (
-                <div className="rounded-2xl p-4"
-                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#9CA3AF' }}>
-                    Your tags
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {aiProfile.tags.map((tag) => (
-                      <span key={tag} className="text-xs px-3 py-1 rounded-full font-semibold"
-                        style={{ background: '#FFF0E8', color: '#E8651A', border: '1px solid rgba(232,101,26,0.2)' }}>
-                        #{tag}
-                      </span>
                     ))}
                   </div>
                 </div>
@@ -206,10 +224,13 @@ export default function Profile({
                               </p>
                               <p className="text-xs" style={{ color: '#9CA3AF' }}>Met at {conn.eventTitle}</p>
                             </div>
-                            <span className="text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1 flex-shrink-0"
-                              style={{ background: 'rgba(232,101,26,0.1)', color: '#E8651A' }}>
-                              <Clock size={9} /> Pending
-                            </span>
+                            <button
+                              onClick={() => onUpdateConnection(conn.id, 'accepted')}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold flex-shrink-0"
+                              style={{ background: '#F0FDF4', border: '1px solid rgba(22,163,74,0.3)', color: '#16A34A' }}
+                            >
+                              <Check size={10} /> Accept
+                            </button>
                           </div>
                         ))}
                       </div>

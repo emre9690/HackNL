@@ -8,6 +8,9 @@ interface ArrivalBadgeProps {
   onBack: () => void;
   connections: Connection[];
   onAddConnection: (conn: Connection) => void;
+  onUpdateConnection: (id: string, status: 'accepted') => void;
+  incomingHandled: 'none' | 'accepted' | 'declined';
+  onSetIncomingHandled: (v: 'none' | 'accepted' | 'declined') => void;
 }
 
 type BadgeView = 'badge' | 'join' | 'leave';
@@ -42,10 +45,9 @@ function CheckIcon({ size }: { size: number }) {
   );
 }
 
-export default function ArrivalBadge({ event, onBack, connections, onAddConnection }: ArrivalBadgeProps) {
+export default function ArrivalBadge({ event, onBack, connections, onAddConnection, onUpdateConnection, incomingHandled, onSetIncomingHandled }: ArrivalBadgeProps) {
   const [view, setView] = useState<BadgeView>('badge');
   const [requestedIds, setRequestedIds] = useState<string[]>([]);
-  const [incomingHandled, setIncomingHandled] = useState<'none' | 'accepted' | 'declined'>('none');
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const [hoverStar, setHoverStar] = useState(0);
@@ -59,9 +61,10 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
   );
 
   const handleRequestContact = (name: string) => {
+    const connId = `conn-${Date.now()}`;
     setRequestedIds((prev) => [...prev, name]);
     const conn: Connection = {
-      id: `conn-${Date.now()}`,
+      id: connId,
       firstName: name,
       lastName: '',
       phone: FAKE_PHONES[name] || '+31 6 00 00 00 00',
@@ -71,10 +74,11 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
       status: 'pending',
     };
     onAddConnection(conn);
+    setTimeout(() => onUpdateConnection(connId, 'accepted'), 2000);
   };
 
   const handleAcceptIncoming = () => {
-    setIncomingHandled('accepted');
+    onSetIncomingHandled('accepted');
     onAddConnection({
       id: `conn-inc-${Date.now()}`,
       firstName: INCOMING_REQUEST.fromName,
@@ -274,7 +278,7 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => setIncomingHandled('declined')}
+                        onClick={() => onSetIncomingHandled('declined')}
                         className="px-3 py-1.5 rounded-xl text-xs font-semibold"
                         style={{ background: 'white', color: '#6B7280', border: '1px solid rgba(0,0,0,0.1)' }}
                       >

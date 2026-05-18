@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, X } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import BottomNav from '../components/BottomNav';
 import { EventRoutine, Screen, AppMode } from '../types';
@@ -7,6 +7,7 @@ import { EventRoutine, Screen, AppMode } from '../types';
 interface SavedEventsProps {
   savedEvents: EventRoutine[];
   onViewEvent: (event: EventRoutine) => void;
+  onSaveEvent: (event: EventRoutine) => void;
   onNavigate: (screen: Screen) => void;
   mode: AppMode;
   currentScreen: Screen;
@@ -15,6 +16,7 @@ interface SavedEventsProps {
 export default function SavedEvents({
   savedEvents,
   onViewEvent,
+  onSaveEvent,
   onNavigate,
   mode,
   currentScreen,
@@ -68,7 +70,16 @@ export default function SavedEvents({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
+              className="relative"
             >
+              <button
+                onClick={() => onSaveEvent(event)}
+                className="absolute top-3 right-3 z-10 w-7 h-7 flex items-center justify-center rounded-full"
+                style={{ background: '#FEF2F2', border: '1px solid rgba(220,38,38,0.2)', color: '#DC2626' }}
+                title="Remove from saved"
+              >
+                <X size={12} />
+              </button>
               <EventCard event={event} onView={onViewEvent} />
             </motion.div>
           ))

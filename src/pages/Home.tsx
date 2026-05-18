@@ -21,15 +21,32 @@ const FILTERS = ['For You', 'All', 'Outdoors', 'Creative', 'Study', 'Games', 'Mu
 function getForYouEvents(prefs: UserPreferences | null): EventRoutine[] {
   if (!prefs || prefs.interests.length === 0) return events.slice(0, 8);
   const lower = prefs.interests.map((i) => i.toLowerCase());
+  const vibeMap: Record<string, string> = {
+    'Quiet': 'Calm', 'Social-light': 'Social-light', 'Mixed': '', 'Energetic': 'Active',
+  };
   const scored = events.map((e) => {
     let score = 0;
-    if (lower.some((i) => e.category.toLowerCase().includes(i))) score += 3;
-    if (e.vibe.some((v) => lower.includes(v.toLowerCase()))) score += 2;
-    if (prefs.language && (prefs.language === 'Both' || e.language.toLowerCase().includes(prefs.language.toLowerCase()))) score += 1;
-    if (prefs.area && e.area.toLowerCase().includes(prefs.area.toLowerCase().split(' ')[0])) score += 1;
+    lower.forEach((interest) => {
+      if (e.category.toLowerCase().includes(interest)) score += 3;
+      if (e.title.toLowerCase().includes(interest)) score += 2;
+    });
+    e.vibe.forEach((v) => {
+      if (lower.includes(v.toLowerCase())) score += 2;
+    });
+    if (prefs.vibe && vibeMap[prefs.vibe]) {
+      if (e.vibe.some((v) => v.toLowerCase().includes(vibeMap[prefs.vibe].toLowerCase()))) score += 1;
+    }
+    if (prefs.language && (prefs.language === 'Both' || e.language === prefs.language)) score += 2;
+    if (prefs.area) {
+      const areaWord = prefs.area.toLowerCase().split(' ')[0];
+      if (e.area.toLowerCase().includes(areaWord)) score += 1;
+    }
     return { e, score };
   });
-  return scored.sort((a, b) => b.score - a.score).map((x) => x.e);
+  const sorted = scored.sort((a, b) => b.score - a.score);
+  const matched = sorted.filter((x) => x.score > 0).map((x) => x.e);
+  if (matched.length >= 6) return matched;
+  return sorted.slice(0, 8).map((x) => x.e);
 }
 
 export default function Home({
@@ -128,7 +145,11 @@ export default function Home({
                     : '0 1px 3px rgba(0,0,0,0.06)',
                 }}
               >
-                {filter === 'All' ? `All · ${events.length}` : filter}
+                {filter === 'All'
+                  ? `All · ${events.length}`
+                  : filter === 'For You'
+                    ? `For You · ${forYouEvents.length}`
+                    : filter}
               </button>
             );
           })}
