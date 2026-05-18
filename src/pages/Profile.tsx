@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Edit3, RotateCcw, User, Link2 } from 'lucide-react';
+import { Edit3, RotateCcw, User, Link2, Phone, Clock } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { UserPreferences, AIProfile, Screen, AppMode, Connection } from '../types';
 
@@ -16,23 +16,17 @@ interface ProfileProps {
 }
 
 const tagColors = [
-  'bg-green-500/20 text-green-300',
-  'bg-blue-500/20 text-blue-300',
-  'bg-purple-500/20 text-purple-300',
-  'bg-yellow-500/20 text-yellow-300',
-  'bg-orange-500/20 text-orange-300',
-  'bg-pink-500/20 text-pink-300',
+  { bg: '#EBF0FB', text: '#1A52A8' },
+  { bg: '#FEF3C7', text: '#D97706' },
+  { bg: '#F3EEFF', text: '#7C3AED' },
+  { bg: '#F0FDF4', text: '#16A34A' },
+  { bg: '#FFF0E8', text: '#E8651A' },
+  { bg: '#FEF2F2', text: '#DC2626' },
 ];
 
 export default function Profile({
-  userPreferences,
-  aiProfile,
-  onEditPreferences,
-  onReset,
-  onNavigate,
-  mode,
-  currentScreen,
-  connections,
+  userPreferences, aiProfile, onEditPreferences, onReset,
+  onNavigate, mode, currentScreen, connections,
 }: ProfileProps) {
   const [tab, setTab] = useState<'overview' | 'connections'>('overview');
 
@@ -41,10 +35,13 @@ export default function Profile({
       ? `${userPreferences.firstName}${userPreferences.lastName ? ' ' + userPreferences.lastName : ''}`
       : 'My Profile';
 
+  const accepted = connections.filter((c) => c.status === 'accepted');
+  const pending = connections.filter((c) => c.status === 'pending');
+
   return (
     <motion.div
       className="absolute inset-0 flex flex-col"
-      style={{ background: '#0d0d12' }}
+      style={{ background: '#F7F3EE' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -52,21 +49,23 @@ export default function Profile({
     >
       <div className="flex-1 overflow-y-auto pb-28">
         {/* Header */}
-        <div className="px-5 pt-14 pb-5 flex-shrink-0">
+        <div className="px-5 pt-14 pb-5">
           <div className="flex items-center gap-3">
             <div
               className="w-14 h-14 rounded-3xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: 'linear-gradient(135deg, rgba(74,222,128,0.2) 0%, rgba(74,222,128,0.05) 100%)',
-                border: '1px solid rgba(74,222,128,0.3)',
+                background: 'linear-gradient(135deg, #FFF0E8, #FFE0CC)',
+                border: '1.5px solid rgba(232,101,26,0.3)',
               }}
             >
-              <User size={24} color="#4ade80" />
+              <User size={24} color="#E8651A" />
             </div>
             <div>
-              <h1 className="font-bold text-xl text-white leading-tight">{displayName}</h1>
+              <h1 className="font-black text-xl leading-tight" style={{ color: '#1A1A2E', letterSpacing: -0.5 }}>
+                {displayName}
+              </h1>
               {userPreferences?.area && (
-                <p className="text-white/40 text-sm">{userPreferences.area}</p>
+                <p className="text-sm" style={{ color: '#9CA3AF' }}>{userPreferences.area}</p>
               )}
             </div>
           </div>
@@ -78,15 +77,18 @@ export default function Profile({
             <button
               key={t}
               onClick={() => setTab(t)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors capitalize"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold transition-colors capitalize"
               style={{
-                background: tab === t ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${tab === t ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                color: tab === t ? '#4ade80' : 'rgba(255,255,255,0.45)',
+                background: tab === t ? '#1A1A2E' : 'white',
+                border: `1px solid ${tab === t ? '#1A1A2E' : 'rgba(0,0,0,0.08)'}`,
+                color: tab === t ? 'white' : '#6B7280',
+                boxShadow: tab === t ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
               }}
             >
               {t === 'connections' && <Link2 size={12} />}
-              {t === 'connections' ? `Connections${connections.length > 0 ? ` · ${connections.length}` : ''}` : 'Overview'}
+              {t === 'connections'
+                ? `Connections${connections.length > 0 ? ` · ${connections.length}` : ''}`
+                : 'Overview'}
             </button>
           ))}
         </div>
@@ -94,75 +96,58 @@ export default function Profile({
         <div className="px-5 flex flex-col gap-4">
           {tab === 'overview' && (
             <>
-              {/* Interests */}
               {userPreferences && userPreferences.interests.length > 0 && (
-                <div
-                  className="rounded-2xl p-4"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">
+                <div className="rounded-2xl p-4"
+                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#9CA3AF' }}>
                     Your interests
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {userPreferences.interests.map((interest, i) => (
-                      <span
-                        key={interest}
-                        className={`text-xs px-3 py-1 rounded-full font-medium ${tagColors[i % tagColors.length]}`}
-                      >
-                        {interest}
-                      </span>
-                    ))}
+                    {userPreferences.interests.map((interest, i) => {
+                      const c = tagColors[i % tagColors.length];
+                      return (
+                        <span key={interest} className="text-xs px-3 py-1 rounded-full font-semibold"
+                          style={{ background: c.bg, color: c.text }}>
+                          {interest}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Preferences */}
               {userPreferences && (
-                <div
-                  className="rounded-2xl p-4"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">
+                <div className="rounded-2xl p-4"
+                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#9CA3AF' }}>
                     Preferences
                   </p>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2.5">
                     {[
                       { label: 'Vibe', value: userPreferences.vibe },
                       { label: 'Language', value: userPreferences.language },
                       { label: 'Age range', value: userPreferences.ageRange },
                       { label: 'Area', value: userPreferences.area },
-                    ]
-                      .filter((p) => p.value)
-                      .map((pref) => (
-                        <div key={pref.label} className="flex items-center justify-between">
-                          <span className="text-white/35 text-sm">{pref.label}</span>
-                          <span className="text-white/70 text-sm font-medium">{pref.value}</span>
-                        </div>
-                      ))}
+                    ].filter((p) => p.value).map((pref) => (
+                      <div key={pref.label} className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: '#9CA3AF' }}>{pref.label}</span>
+                        <span className="text-sm font-semibold" style={{ color: '#1A1A2E' }}>{pref.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* AI tags */}
               {aiProfile && aiProfile.tags.length > 0 && (
-                <div
-                  className="rounded-2xl p-4"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">
+                <div className="rounded-2xl p-4"
+                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#9CA3AF' }}>
                     Your tags
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {aiProfile.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-xs px-3 py-1 rounded-full"
-                        style={{
-                          background: 'rgba(74,222,128,0.1)',
-                          border: '1px solid rgba(74,222,128,0.2)',
-                          color: '#4ade80',
-                        }}
-                      >
+                      <span key={tag} className="text-xs px-3 py-1 rounded-full font-semibold"
+                        style={{ background: '#FFF0E8', color: '#E8651A', border: '1px solid rgba(232,101,26,0.2)' }}>
                         #{tag}
                       </span>
                     ))}
@@ -170,28 +155,15 @@ export default function Profile({
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex gap-2 mt-1">
-                <button
-                  onClick={onEditPreferences}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-medium"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.7)',
-                  }}
-                >
+                <button onClick={onEditPreferences}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold"
+                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.1)', color: '#4B5563', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <Edit3 size={14} /> Edit preferences
                 </button>
-                <button
-                  onClick={onReset}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium"
-                  style={{
-                    background: 'rgba(248,113,113,0.08)',
-                    border: '1px solid rgba(248,113,113,0.2)',
-                    color: '#f87171',
-                  }}
-                >
+                <button onClick={onReset}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold"
+                  style={{ background: '#FEF2F2', border: '1px solid rgba(220,38,38,0.2)', color: '#DC2626' }}>
                   <RotateCcw size={14} /> Reset
                 </button>
               </div>
@@ -201,44 +173,87 @@ export default function Profile({
           {tab === 'connections' && (
             <>
               {connections.length === 0 ? (
-                <div
-                  className="rounded-2xl p-6 flex flex-col items-center text-center"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-                >
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: 'rgba(74,222,128,0.08)' }}>
-                    <Link2 size={20} color="rgba(74,222,128,0.5)" />
+                <div className="rounded-2xl p-6 flex flex-col items-center text-center"
+                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)' }}>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+                    style={{ background: '#FFF0E8' }}>
+                    <Link2 size={20} color="#E8651A" />
                   </div>
-                  <p className="text-white/50 text-sm font-medium mb-1">No connections yet</p>
-                  <p className="text-white/25 text-xs leading-relaxed">
+                  <p className="text-sm font-bold mb-1" style={{ color: '#4B5563' }}>No connections yet</p>
+                  <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>
                     Connections appear after you meet people at events in person.
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {connections.map((conn) => (
-                    <div
-                      key={conn.id}
-                      className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                    >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                        style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80' }}
-                      >
-                        {conn.firstName[0]}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-white/85 text-sm font-semibold">
-                          {conn.firstName}{conn.lastName ? ' ' + conn.lastName : ''}
-                        </p>
-                        <p className="text-white/35 text-xs truncate">
-                          Met at {conn.eventTitle}
-                          {conn.connectedAt && ` · ${new Date(conn.connectedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
-                        </p>
+                <>
+                  {pending.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: '#E8651A' }}>
+                        Pending · {pending.length}
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {pending.map((conn) => (
+                          <div key={conn.id}
+                            className="flex items-center gap-3 rounded-2xl px-4 py-3"
+                            style={{ background: '#FFF7F3', border: '1px solid rgba(232,101,26,0.15)' }}>
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                              style={{ background: 'rgba(232,101,26,0.12)', color: '#E8651A' }}>
+                              {conn.firstName[0]}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold" style={{ color: '#1A1A2E' }}>
+                                {conn.firstName}{conn.lastName ? ' ' + conn.lastName : ''}
+                              </p>
+                              <p className="text-xs" style={{ color: '#9CA3AF' }}>Met at {conn.eventTitle}</p>
+                            </div>
+                            <span className="text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1 flex-shrink-0"
+                              style={{ background: 'rgba(232,101,26,0.1)', color: '#E8651A' }}>
+                              <Clock size={9} /> Pending
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+
+                  {accepted.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: '#16A34A' }}>
+                        Connected · {accepted.length}
+                      </p>
+                      <div className="flex flex-col gap-2.5">
+                        {accepted.map((conn) => (
+                          <div key={conn.id}
+                            className="rounded-2xl p-4"
+                            style={{ background: 'white', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-base font-black flex-shrink-0"
+                                style={{ background: '#F0FDF4', color: '#16A34A' }}>
+                                {conn.firstName[0]}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold leading-tight" style={{ color: '#1A1A2E' }}>
+                                  {conn.firstName}{conn.lastName ? ' ' + conn.lastName : ''}
+                                </p>
+                                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+                                  Met at <span style={{ color: '#6B7280', fontWeight: 500 }}>{conn.eventTitle}</span>
+                                  {conn.connectedAt && ` · ${new Date(conn.connectedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+                              style={{ background: '#F0FDF4', border: '1px solid rgba(22,163,74,0.15)' }}>
+                              <Phone size={13} color="#16A34A" />
+                              <span className="text-sm font-bold tracking-wide" style={{ color: '#16A34A' }}>
+                                {conn.phone || '—'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}

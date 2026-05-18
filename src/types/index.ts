@@ -20,6 +20,7 @@ export interface EventRoutine {
 export interface UserPreferences {
   firstName: string;
   lastName: string;
+  phone: string;
   interests: string[];
   vibe: string;
   language: string;
@@ -52,9 +53,11 @@ export interface Connection {
   id: string;
   firstName: string;
   lastName: string;
+  phone: string;
   eventId: string;
   eventTitle: string;
   connectedAt: string;
+  status: 'pending' | 'accepted';
 }
 
 export type AttendStatus = 'none' | 'maybe' | 'going';

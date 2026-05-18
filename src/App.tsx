@@ -22,14 +22,22 @@ import {
 import { events } from './data/events';
 import { aiSuggestions as initialSuggestions } from './data/demoUsers';
 
-const LS_PREFS = 'stadspas_prefs';
-const LS_PROFILE = 'stadspas_profile';
-const LS_SAVED = 'stadspas_saved';
-const LS_CONNECTIONS = 'stadspas_connections';
+const LS_PREFS = 'stadkompas_prefs';
+const LS_PROFILE = 'stadkompas_profile';
+const LS_SAVED = 'stadkompas_saved';
+const LS_CONNECTIONS = 'stadkompas_connections';
 
 const INITIAL_CONNECTIONS: Connection[] = [
-  { id: 'conn1', firstName: 'Ana', lastName: 'V.', eventId: 'ev4', eventTitle: 'Sketch Café', connectedAt: '2024-11-08' },
-  { id: 'conn2', firstName: 'Marcus', lastName: 'L.', eventId: 'ev1', eventTitle: 'Catan Night', connectedAt: '2024-11-15' },
+  {
+    id: 'conn1', firstName: 'Ana', lastName: 'V.', phone: '+31 6 55 66 77 88',
+    eventId: 'ev4', eventTitle: 'Sketch Café',
+    connectedAt: '2024-11-08', status: 'accepted',
+  },
+  {
+    id: 'conn2', firstName: 'Marcus', lastName: 'L.', phone: '+31 6 45 67 89 01',
+    eventId: 'ev1', eventTitle: 'Catan Night',
+    connectedAt: '2024-11-15', status: 'accepted',
+  },
 ];
 
 function loadLS<T>(key: string): T | null {
@@ -38,7 +46,6 @@ function loadLS<T>(key: string): T | null {
     return raw ? (JSON.parse(raw) as T) : null;
   } catch { return null; }
 }
-
 function saveLS<T>(key: string, value: T) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
 }
@@ -60,6 +67,7 @@ export default function App() {
     loadLS<Connection[]>(LS_CONNECTIONS) || INITIAL_CONNECTIONS
   );
   const [attendStatus, setAttendStatus] = useState<Record<string, AttendStatus>>({});
+  const [attendDelta, setAttendDelta] = useState<Record<string, { considering: number; going: number }>>({});
   const [suggestions, setSuggestions] = useState<AISuggestion[]>(initialSuggestions);
 
   useEffect(() => { if (userPreferences) saveLS(LS_PREFS, userPreferences); }, [userPreferences]);
@@ -85,13 +93,28 @@ export default function App() {
     });
   };
 
-  const handleAttend = (eventId: string, status: AttendStatus) => {
-    setAttendStatus((prev) => ({ ...prev, [eventId]: status }));
+  const handleAttend = (eventId: string, newStatus: AttendStatus) => {
+    const prev = attendStatus[eventId] || 'none';
+    setAttendStatus((s) => ({ ...s, [eventId]: newStatus }));
+    setAttendDelta((d) => {
+      const current = d[eventId] || { considering: 0, going: 0 };
+      let { considering, going } = current;
+
+      // Undo previous
+      if (prev === 'maybe') considering -= 1;
+      if (prev === 'going') { going -= 1; considering -= 1; }
+
+      // Apply new
+      if (newStatus === 'maybe') considering += 1;
+      if (newStatus === 'going') { going += 1; considering += 1; }
+
+      return { ...d, [eventId]: { considering, going } };
+    });
   };
 
   const handleAddConnection = (conn: Connection) => {
     setConnections((prev) => {
-      if (prev.some((c) => c.id === conn.id || c.firstName === conn.firstName)) return prev;
+      if (prev.some((c) => c.id === conn.id)) return prev;
       return [...prev, conn];
     });
   };
@@ -106,6 +129,7 @@ export default function App() {
     setSavedEvents([]);
     setConnections(INITIAL_CONNECTIONS);
     setAttendStatus({});
+    setAttendDelta({});
     setSelectedEvent(null);
     setMode('resident');
     setCurrentScreen('landing');
@@ -125,6 +149,7 @@ export default function App() {
   const setModeExternal = useCallback((m: AppMode) => setMode(m), []);
 
   const isSaved = (event: EventRoutine) => savedEvents.some((e) => e.id === event.id);
+  const getEventDelta = (id: string) => attendDelta[id] || { considering: 0, going: 0 };
 
   const renderScreen = () => {
     if (mode === 'admin') {
@@ -158,6 +183,8 @@ export default function App() {
             onNavigate={handleNavigate}
             mode={mode}
             currentScreen={currentScreen}
+            attendDelta={attendDelta}
+            attendStatus={attendStatus}
           />
         );
 
@@ -175,6 +202,7 @@ export default function App() {
             mode={mode}
             currentScreen={currentScreen}
             userPreferences={userPreferences}
+            attendDelta={getEventDelta(selectedEvent.id)}
           />
         ) : null;
 
@@ -190,14 +218,18 @@ export default function App() {
 
       case 'map':
         return (
-          <div className="absolute inset-0 flex flex-col" style={{ background: '#0d0d12' }}>
+          <div className="absolute inset-0 flex flex-col" style={{ background: '#F7F3EE' }}>
             <div className="px-5 pt-14 pb-3 flex-shrink-0">
-              <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-0.5">Explore</p>
-              <h1 className="text-white font-bold text-xl">Map view</h1>
+              <p className="text-xs font-bold uppercase tracking-wider mb-0.5" style={{ color: '#9CA3AF' }}>
+                Explore
+              </p>
+              <h1 className="font-black text-xl" style={{ color: '#1A1A2E', letterSpacing: -0.5 }}>
+                Map view
+              </h1>
             </div>
             <div
               className="flex-1 mx-4 mb-24 rounded-2xl overflow-hidden"
-              style={{ border: '1px solid rgba(255,255,255,0.08)', minHeight: 0 }}
+              style={{ border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', minHeight: 0 }}
             >
               <MapView
                 events={events}
@@ -205,6 +237,7 @@ export default function App() {
                 center={[51.9176, 4.5253]}
                 zoom={13}
                 className="h-full w-full"
+                showLegend
               />
             </div>
             <BottomNav mode={mode} currentScreen={currentScreen} onNavigate={handleNavigate} />
@@ -242,7 +275,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0f' }}>
+    <div style={{ minHeight: '100vh', background: '#0F172A' }}>
       <PhoneFrame>
         <AnimatePresence mode="wait">
           <div key={`${currentScreen}-${mode}`} style={{ position: 'absolute', inset: 0 }}>

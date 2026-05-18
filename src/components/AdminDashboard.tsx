@@ -43,7 +43,7 @@ export default function AdminDashboard({ suggestions, onUpdateSuggestion }: Admi
         <p className="text-white/40 text-xs font-medium uppercase tracking-widest mb-1">
           Admin View
         </p>
-        <h1 className="text-white font-bold text-xl">StadSpas Dashboard</h1>
+        <h1 className="text-white font-bold text-xl">StadKompas Dashboard</h1>
       </div>
 
       {/* Tab bar */}

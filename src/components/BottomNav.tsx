@@ -12,7 +12,7 @@ export default function BottomNav({ mode, currentScreen, onNavigate }: BottomNav
     { screen: 'home' as Screen, icon: Home, label: 'Home' },
     { screen: 'map' as Screen, icon: Map, label: 'Map' },
     { screen: 'saved' as Screen, icon: Bookmark, label: 'Saved' },
-    { screen: 'arrival' as Screen, icon: Zap, label: 'Arrival' },
+    { screen: 'arrival' as Screen, icon: Zap, label: 'Here' },
     { screen: 'profile' as Screen, icon: User, label: 'Profile' },
   ];
 
@@ -28,34 +28,38 @@ export default function BottomNav({ mode, currentScreen, onNavigate }: BottomNav
     <div
       className="absolute bottom-0 left-0 right-0 z-40"
       style={{
-        background: 'rgba(26,26,26,0.95)',
+        background: 'rgba(255,255,255,0.97)',
         backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        paddingBottom: 28,
+        borderTop: '1px solid rgba(0,0,0,0.07)',
+        paddingBottom: 24,
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.06)',
       }}
     >
       <div className="flex items-center justify-around pt-3 pb-1 px-2">
         {tabs.map((tab, i) => {
-          const isActive =
-            mode === 'admin'
-              ? false
-              : currentScreen === tab.screen;
+          const isActive = mode === 'admin' ? false : currentScreen === tab.screen;
           const Icon = tab.icon;
           return (
             <button
               key={`${tab.screen}-${i}`}
               onClick={() => onNavigate(tab.screen)}
-              className="flex flex-col items-center gap-1 flex-1 py-1 transition-opacity"
-              style={{ opacity: isActive ? 1 : 0.4 }}
+              className="flex flex-col items-center gap-0.5 flex-1 py-1 transition-all"
             >
-              <Icon
-                size={22}
-                color={isActive ? '#4ade80' : '#ffffff'}
-                strokeWidth={isActive ? 2.5 : 1.8}
-              />
+              <div
+                className="w-8 h-8 flex items-center justify-center rounded-xl transition-colors"
+                style={{
+                  background: isActive ? 'rgba(232,101,26,0.12)' : 'transparent',
+                }}
+              >
+                <Icon
+                  size={20}
+                  color={isActive ? '#E8651A' : '#9CA3AF'}
+                  strokeWidth={isActive ? 2.5 : 1.8}
+                />
+              </div>
               <span
-                className="text-[10px] font-medium"
-                style={{ color: isActive ? '#4ade80' : '#ffffff' }}
+                className="text-[10px] font-medium transition-colors"
+                style={{ color: isActive ? '#E8651A' : '#9CA3AF' }}
               >
                 {tab.label}
               </span>

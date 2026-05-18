@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import BottomNav from '../components/BottomNav';
-import { EventRoutine, UserPreferences, Screen, AppMode } from '../types';
+import { EventRoutine, UserPreferences, Screen, AppMode, AttendStatus } from '../types';
 import { events } from '../data/events';
 
 interface HomeProps {
@@ -12,131 +12,179 @@ interface HomeProps {
   onNavigate: (screen: Screen) => void;
   mode: AppMode;
   currentScreen: Screen;
+  attendDelta: Record<string, { considering: number; going: number }>;
+  attendStatus: Record<string, AttendStatus>;
 }
 
-const FILTERS = ['For You', 'Calm', 'Active', 'Creative', 'Study', 'Games', 'This week'];
+const FILTERS = ['For You', 'All', 'Outdoors', 'Creative', 'Study', 'Games', 'Music', 'Food'];
 
-export default function Home({ userPreferences, onViewEvent, onNavigate, mode, currentScreen }: HomeProps) {
+function getForYouEvents(prefs: UserPreferences | null): EventRoutine[] {
+  if (!prefs || prefs.interests.length === 0) return events.slice(0, 8);
+  const lower = prefs.interests.map((i) => i.toLowerCase());
+  const scored = events.map((e) => {
+    let score = 0;
+    if (lower.some((i) => e.category.toLowerCase().includes(i))) score += 3;
+    if (e.vibe.some((v) => lower.includes(v.toLowerCase()))) score += 2;
+    if (prefs.language && (prefs.language === 'Both' || e.language.toLowerCase().includes(prefs.language.toLowerCase()))) score += 1;
+    if (prefs.area && e.area.toLowerCase().includes(prefs.area.toLowerCase().split(' ')[0])) score += 1;
+    return { e, score };
+  });
+  return scored.sort((a, b) => b.score - a.score).map((x) => x.e);
+}
+
+export default function Home({
+  userPreferences, onViewEvent, onNavigate, mode, currentScreen, attendDelta, attendStatus,
+}: HomeProps) {
   const [activeFilter, setActiveFilter] = useState('For You');
   const [search, setSearch] = useState('');
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const area = userPreferences?.area || 'Erasmus';
+  const area = userPreferences?.area || 'Rotterdam';
+  const forYouEvents = getForYouEvents(userPreferences);
 
-  const filteredEvents = events.filter((event) => {
+  const isForYou = activeFilter === 'For You';
+  const isAll = activeFilter === 'All';
+
+  const pool = isForYou ? forYouEvents : events;
+
+  const displayedEvents = pool.filter((event) => {
     const matchesSearch =
       search === '' ||
       event.title.toLowerCase().includes(search.toLowerCase()) ||
       event.location.toLowerCase().includes(search.toLowerCase()) ||
       event.category.toLowerCase().includes(search.toLowerCase());
-
     const matchesFilter =
-      activeFilter === 'For You' ||
-      activeFilter === 'This week' ||
-      event.vibe.some((v) => v.toLowerCase() === activeFilter.toLowerCase()) ||
-      event.category.toLowerCase() === activeFilter.toLowerCase();
-
+      isForYou || isAll ||
+      event.vibe.some((v) => v.toLowerCase().includes(activeFilter.toLowerCase())) ||
+      event.category.toLowerCase().includes(activeFilter.toLowerCase());
     return matchesSearch && matchesFilter;
   });
+
+  const getAdjustedEvent = (e: EventRoutine) => {
+    const delta = attendDelta[e.id];
+    if (!delta) return e;
+    return { ...e, considering: e.considering + delta.considering, going: e.going + delta.going };
+  };
 
   return (
     <motion.div
       className="absolute inset-0 flex flex-col"
-      style={{ background: '#0d0d12' }}
+      style={{ background: '#F7F3EE' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
     >
       {/* Header */}
-      <div className="px-5 pt-14 pb-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="text-white/40 text-xs font-medium">Good to see you</p>
-            <h1 className="text-white font-bold text-xl">
-              Spaces near{' '}
-              <span style={{ color: '#4ade80' }}>{area.split(' ')[0]}</span>
-            </h1>
-          </div>
-          <button
-            onClick={() => setRefreshKey((k) => k + 1)}
-            className="w-9 h-9 flex items-center justify-center rounded-full"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <RefreshCw size={15} color="rgba(255,255,255,0.4)" />
-          </button>
-        </div>
+      <div className="px-5 pt-14 pb-3 flex-shrink-0">
+        <p className="text-xs font-medium mb-0.5" style={{ color: '#9CA3AF' }}>
+          Good to see you
+        </p>
+        <h1 className="font-black text-2xl" style={{ color: '#1A1A2E', letterSpacing: -0.5 }}>
+          Spaces near{' '}
+          <span style={{ color: '#E8651A' }}>{area.split(' ')[0]}</span>
+        </h1>
       </div>
 
       {/* Search */}
       <div className="px-5 mb-3 flex-shrink-0">
         <div
-          className="flex items-center gap-2 px-4 py-3 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl"
+          style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
         >
-          <Search size={15} color="rgba(255,255,255,0.3)" />
+          <Search size={15} color="#9CA3AF" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search routines, places, hobbies..."
-            className="flex-1 bg-transparent text-sm text-white/70 outline-none placeholder-white/25"
+            className="flex-1 bg-transparent text-sm outline-none"
+            style={{ color: '#1A1A2E' }}
           />
         </div>
       </div>
 
-      {/* Filter chips */}
-      <div className="flex-shrink-0 mb-4">
-        <div className="flex gap-2 px-5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      {/* Unified filter strip */}
+      <div className="flex-shrink-0 mb-3 relative">
+        <div
+          className="flex gap-1.5 px-5 overflow-x-auto"
+          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+        >
           {FILTERS.map((filter) => {
             const isActive = activeFilter === filter;
+            const isPrimary = filter === 'For You' || filter === 'All';
             return (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition-all"
+                className="flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all"
                 style={{
-                  background: isActive ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.06)',
-                  border: `1px solid ${isActive ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                  color: isActive ? '#4ade80' : 'rgba(255,255,255,0.5)',
+                  background: isActive
+                    ? (isPrimary ? '#1A1A2E' : '#E8651A')
+                    : 'white',
+                  border: `1.5px solid ${isActive ? (isPrimary ? '#1A1A2E' : '#E8651A') : 'rgba(0,0,0,0.08)'}`,
+                  color: isActive ? 'white' : '#6B7280',
+                  boxShadow: isActive
+                    ? (isPrimary ? 'none' : '0 2px 8px rgba(232,101,26,0.25)')
+                    : '0 1px 3px rgba(0,0,0,0.06)',
                 }}
               >
-                {filter}
+                {filter === 'All' ? `All · ${events.length}` : filter}
               </button>
             );
           })}
         </div>
+        {/* Fade edge to hint at scroll */}
+        <div
+          className="absolute top-0 right-0 h-full w-8 pointer-events-none"
+          style={{ background: 'linear-gradient(to right, transparent, #F7F3EE)' }}
+        />
       </div>
 
       {/* Events list */}
-      <div className="flex-1 overflow-y-auto px-5 pb-28" key={refreshKey}>
-        {filteredEvents.length === 0 ? (
-          <div className="text-center py-12 text-white/30">
-            <p className="text-sm">No spaces found.</p>
-            <button
-              onClick={() => { setSearch(''); setActiveFilter('For You'); }}
-              className="mt-2 text-xs underline"
-              style={{ color: '#4ade80' }}
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          filteredEvents.map((event, index) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <EventCard
-                event={event}
-                onView={onViewEvent}
-                showConnection={event.id === 'ev4'}
-              />
-            </motion.div>
-          ))
-        )}
+      <div className="flex-1 overflow-y-auto px-5 pb-28">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${activeFilter}-${search}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {isAll && search === '' && (
+              <p className="text-xs font-medium mb-3" style={{ color: '#9CA3AF' }}>
+                All events in Rotterdam
+              </p>
+            )}
+            {displayedEvents.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-sm" style={{ color: '#9CA3AF' }}>No spaces found.</p>
+                <button
+                  onClick={() => { setSearch(''); setActiveFilter('For You'); }}
+                  className="mt-2 text-xs underline"
+                  style={{ color: '#E8651A' }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              displayedEvents.map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.04 }}
+                >
+                  <EventCard
+                    event={getAdjustedEvent(event)}
+                    onView={onViewEvent}
+                    showConnection={event.id === 'ev4'}
+                    attendStatus={attendStatus[event.id] || 'none'}
+                  />
+                </motion.div>
+              ))
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <BottomNav mode={mode} currentScreen={currentScreen} onNavigate={onNavigate} />
