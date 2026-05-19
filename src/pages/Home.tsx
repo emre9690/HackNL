@@ -75,9 +75,9 @@ function getForYouEvents(prefs: UserPreferences | null): EventRoutine[] {
   });
 
   const sorted = scored.sort((a, b) => b.score - a.score);
-  const matched = sorted.filter((x) => x.score > 0).map((x) => x.e);
-  if (matched.length >= 6) return matched;
-  return sorted.slice(0, 8).map((x) => x.e);
+  const matched = sorted.filter((x) => x.score >= 3).map((x) => x.e);
+  if (matched.length > 0) return matched;
+  return sorted.slice(0, 4).map((x) => x.e);
 }
 
 export default function Home({

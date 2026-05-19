@@ -1,86 +1,114 @@
 # StadKompas — Discover Rotterdam
 
-A hackathon MVP that helps residents (especially newcomers and international students) discover low-pressure, recurring social routines and spaces in Rotterdam. Built with a phone-mockup UI for demo purposes.
+> Built at HackNL 2025 in 24 hours.
+
+StadKompas helps newcomers and international students find **low-pressure, recurring social routines** in Rotterdam — study tables, board game nights, sketch cafés, Sunday walks. Not one-off events. Spaces you can return to.
+
+The problem: Rotterdam has a rich informal social scene, but it's invisible to people who just arrived. WhatsApp groups, word-of-mouth, niche subreddits. StadKompas surfaces it.
+
+---
+
+## Demo
+
+The app runs in a phone mockup — designed for live demo and video walkthroughs.
+
+```bash
+npm install
+npm run dev
+# → http://localhost:5173
+```
+
+Use the **Demo Controls** panel (bottom-right) to jump between screens or reset state.
+
+### Flow
+
+```
+Landing → Onboarding → Home (For You feed) → Event Detail → Arrival Badge
+                                         ↘ Map / Saved / Profile
+```
+
+**Admin mode** (toggle in Demo Controls): city dashboard where staff approve AI-suggested events and assign hosts.
+
+---
+
+## How the Recommendation Works
+
+Onboarding collects four signals: **interests**, **vibe**, **language**, and **area**.
+
+Each event is scored against your profile:
+
+| Signal | Match type | Points |
+|--------|-----------|--------|
+| Interest | Exact category match | +3 |
+| Interest | Exact vibe tag match | +2 |
+| Interest group | Broad group match (e.g. any Creative interest → Creative-tagged events) | +1 |
+| Language | Matches your language preference | +2 |
+| Vibe | Matches your energy preference (Quiet → Calm events) | +1 |
+| Area | Event is in your neighbourhood | +1 |
+
+Events scoring below 3 are filtered out. The rest are sorted and shown as your **For You** feed. The fewer interests you pick, the tighter the list — by design.
+
+---
 
 ## Tech Stack
 
-- **Frontend**: Vite + React + TypeScript + Tailwind CSS + Framer Motion
-- **Map**: React Leaflet with OpenStreetMap tiles (no paid API key needed)
-- **Icons**: lucide-react
-- **Backend**: Node.js + Express
-- **AI**: Anthropic Claude (optional — falls back to mock if no API key)
-- **Persistence**: localStorage (no database, no auth)
+| Layer | Tool |
+|-------|------|
+| Frontend | Vite + React + TypeScript |
+| Styling | Tailwind CSS + Framer Motion |
+| Map | React Leaflet + OpenStreetMap (no paid key) |
+| Icons | lucide-react |
+| Backend | Node.js + Express |
+| Persistence | localStorage (no database, no auth) |
 
-## Setup
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. (Optional) Copy env file and add your Anthropic key
-cp .env.example .env
-# Edit .env and set ANTHROPIC_API_KEY=your_key_here
-
-# 3. Start both frontend and backend
-npm run dev
-```
-
-The app runs at **http://localhost:5173** and the server at **http://localhost:3001**.
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | No | Claude API key. If absent, mock AI responses are used. |
-| `CLAUDE_MODEL` | No | Defaults to `claude-haiku-4-5-20251001` |
-| `PORT` | No | Server port. Defaults to `3001` |
-
-## Demo Flow
-
-Use the **Demo Controls** panel (bottom-right corner) to navigate:
-
-1. **Auto Demo** — cycles through all screens automatically (2s each)
-2. **Resident** — jump to the resident home screen
-3. **Admin** — switch to the city dashboard view
-4. **Reset** — clear localStorage and restart from landing
-
-### Resident flow
-Landing → Onboarding (3 steps) → Home → Event Detail → Arrival Badge
-
-### Admin flow
-Admin Dashboard → Suggestions (approve/reject AI proposals) → Insights (anonymised analytics)
-
-## Screens
-
-| Screen | Description |
-|---|---|
-| Landing | App intro with CTA |
-| Onboarding | 3-step preference collection |
-| Home | Filtered event feed with search |
-| Event Detail | Full event info + map + save/arrival actions |
-| Arrival Badge | Code word screen to find the group |
-| Map | Leaflet map with all event markers |
-| Saved | Bookmarked events |
-| Profile | User archetype + preferences |
-| Admin | AI suggestions + approved events + insights |
-
-## Privacy Notes
-
-- No user accounts or authentication
-- Preferences are stored in browser localStorage only
-- The free-text profile field is sent to Claude API (if configured) but not persisted server-side
-- All attendance figures are demo data
+---
 
 ## Project Structure
 
 ```
-/
-  src/
-    components/   # Reusable UI components
-    pages/        # Screen components
-    data/         # Static mock data
-    types/        # TypeScript interfaces
-  server/
-    routes/       # Express route handlers
-    index.js      # Server entry point
+src/
+  components/     # PhoneFrame, BottomNav, MapView, EventCard, ArrivalBadge, AdminDashboard
+  pages/          # Landing, Onboarding, Home, EventDetail, SavedEvents, Profile
+  data/           # 24 real Rotterdam-inspired events + demo user data
+  types/          # TypeScript interfaces
+server/
+  routes/         # Express API routes
+  index.js        # Server entry point
 ```
+
+---
+
+## Screens
+
+| Screen | What it does |
+|--------|-------------|
+| Landing | Intro + CTA |
+| Onboarding | 3-step preference collection (interests → vibe/language/area → profile) |
+| Home | Personalised feed with search + category filters |
+| Event Detail | Full info, map pin, attendance counter, save/arrival |
+| Arrival Badge | Code word to identify the group in person |
+| Map | All events as pins on a Leaflet map |
+| Saved | Bookmarked events |
+| Profile | User archetype + preferences + connections |
+| Admin | AI event suggestions, host assignment, insights |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | No | Claude API key — falls back to mock if absent |
+| `CLAUDE_MODEL` | No | Defaults to `claude-haiku-4-5-20251001` |
+| `PORT` | No | Server port, defaults to `3001` |
+
+Copy `.env.example` to `.env` and fill in if needed. The app runs fully without an API key.
+
+---
+
+## Privacy
+
+- No user accounts or authentication
+- All preferences stored in browser localStorage only
+- Free-text profile field is sent to Claude API if configured, never persisted server-side
+- All attendance figures are demo data
