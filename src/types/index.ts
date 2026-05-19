@@ -63,6 +63,15 @@ export interface Connection {
 
 export type AttendStatus = 'none' | 'maybe' | 'going';
 
+export type DemoAction =
+  | { type: 'SET_ONBOARDING'; data: { step: number; prefs: UserPreferences } | null }
+  | { type: 'COMPLETE_ONBOARDING'; prefs: UserPreferences; profile: AIProfile }
+  | { type: 'SET_ARRIVAL_VIEW'; view: 'badge' | 'join' | null }
+  | { type: 'CONNECT'; name: string | null }
+  | { type: 'ACCEPT_INCOMING'; value: boolean }
+  | { type: 'SELECT_EVENT'; event: EventRoutine }
+  | { type: 'ATTEND'; eventId: string; status: AttendStatus };
+
 export type Screen =
   | 'landing'
   | 'onboarding'

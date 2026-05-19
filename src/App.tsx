@@ -17,7 +17,7 @@ import Profile from './pages/Profile';
 
 import {
   Screen, AppMode, EventRoutine, UserPreferences, AIProfile,
-  AISuggestion, Connection, AttendStatus,
+  AISuggestion, Connection, AttendStatus, DemoAction,
 } from './types';
 import { events } from './data/events';
 import { aiSuggestions as initialSuggestions } from './data/demoUsers';
@@ -81,6 +81,10 @@ export default function App() {
     loadLS<Record<string, 'accepted' | 'declined'>>(LS_INCOMING) || {}
   );
   const [suggestions, setSuggestions] = useState<AISuggestion[]>(initialSuggestions);
+  const [demoOnboardingData, setDemoOnboardingData] = useState<{ step: number; prefs: UserPreferences } | null>(null);
+  const [demoArrivalView, setDemoArrivalView] = useState<'badge' | 'join' | null>(null);
+  const [demoConnectName, setDemoConnectName] = useState<string | null>(null);
+  const [demoAcceptIncoming, setDemoAcceptIncoming] = useState(false);
 
   useEffect(() => { if (userPreferences) saveLS(LS_PREFS, userPreferences); }, [userPreferences]);
   useEffect(() => { if (aiProfile) saveLS(LS_PROFILE, aiProfile); }, [aiProfile]);
@@ -155,6 +159,40 @@ export default function App() {
     setMode('resident');
     setCurrentScreen('landing');
     setSuggestions(initialSuggestions);
+    setDemoOnboardingData(null);
+    setDemoArrivalView(null);
+    setDemoConnectName(null);
+    setDemoAcceptIncoming(false);
+  }, []);
+
+  const handleDemoAction = useCallback((action: DemoAction) => {
+    switch (action.type) {
+      case 'SET_ONBOARDING':
+        setDemoOnboardingData(action.data);
+        break;
+      case 'COMPLETE_ONBOARDING':
+        setUserPreferences(action.prefs);
+        setAiProfile(action.profile);
+        setCurrentScreen('home');
+        setDemoOnboardingData(null);
+        break;
+      case 'SET_ARRIVAL_VIEW':
+        setDemoArrivalView(action.view);
+        break;
+      case 'CONNECT':
+        setDemoConnectName(action.name);
+        break;
+      case 'ACCEPT_INCOMING':
+        setDemoAcceptIncoming(action.value);
+        break;
+      case 'SELECT_EVENT':
+        setSelectedEvent(action.event);
+        break;
+      case 'ATTEND':
+        handleAttend(action.eventId, action.status);
+        break;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleUpdateSuggestion = (
@@ -199,6 +237,7 @@ export default function App() {
             onNavigate={setCurrentScreen}
             initialPrefs={userPreferences}
             isEditing={!!userPreferences}
+            demoProps={demoOnboardingData}
           />
         );
 
@@ -255,6 +294,9 @@ export default function App() {
             onUpdateConnection={handleUpdateConnection}
             incomingHandled={eventIncoming}
             onSetIncomingHandled={handleSetIncoming}
+            forceView={demoArrivalView}
+            demoConnectName={demoConnectName}
+            demoAcceptIncoming={demoAcceptIncoming}
           />
         );
       }
@@ -334,6 +376,7 @@ export default function App() {
         onSetMode={setModeExternal}
         onReset={handleReset}
         currentScreen={currentScreen}
+        onDemoAction={handleDemoAction}
       />
     </div>
   );

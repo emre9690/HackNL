@@ -72,6 +72,7 @@ interface OnboardingProps {
   onNavigate: (screen: Screen) => void;
   initialPrefs?: UserPreferences | null;
   isEditing?: boolean;
+  demoProps?: { step: number; prefs: UserPreferences } | null;
 }
 
 // ── Interest categories ──
@@ -126,7 +127,7 @@ const AREAS = [
   'Delfshaven', 'Noord', 'Zuid', 'Kop van Zuid',
 ];
 
-export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEditing }: OnboardingProps) {
+export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEditing, demoProps }: OnboardingProps) {
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -153,6 +154,22 @@ export default function Onboarding({ onComplete, onNavigate, initialPrefs, isEdi
       setFreeText(initialPrefs.freeText || '');
     }
   }, [initialPrefs]);
+
+  useEffect(() => {
+    if (!demoProps) return;
+    const p = demoProps.prefs;
+    setStep(demoProps.step);
+    setFirstName(p.firstName);
+    setLastName(p.lastName);
+    setPhone(p.phone);
+    setInterests(p.interests);
+    setVibe(p.vibe);
+    setLanguage(p.language);
+    setAgeRange(p.ageRange);
+    setArea(p.area);
+    setFreeText(p.freeText);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoProps?.step]);
 
   const toggleInterest = (item: string) => {
     setInterests((prev) =>
