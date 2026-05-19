@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, X, Star, UserPlus, LogOut, ChevronUp, Phone } from 'lucide-react';
 import { EventRoutine, Connection } from '../types';
@@ -11,6 +11,9 @@ interface ArrivalBadgeProps {
   onUpdateConnection: (id: string, status: 'accepted') => void;
   incomingHandled: 'none' | 'accepted' | 'declined';
   onSetIncomingHandled: (v: 'none' | 'accepted' | 'declined') => void;
+  forceView?: 'badge' | 'join' | null;
+  demoConnectName?: string | null;
+  demoAcceptIncoming?: boolean;
 }
 
 type BadgeView = 'badge' | 'join' | 'leave';
@@ -80,7 +83,7 @@ function CheckIcon({ size }: { size: number }) {
   );
 }
 
-export default function ArrivalBadge({ event, onBack, connections, onAddConnection, onUpdateConnection, incomingHandled, onSetIncomingHandled }: ArrivalBadgeProps) {
+export default function ArrivalBadge({ event, onBack, connections, onAddConnection, onUpdateConnection, incomingHandled, onSetIncomingHandled, forceView, demoConnectName, demoAcceptIncoming }: ArrivalBadgeProps) {
   const [view, setView] = useState<BadgeView>('badge');
   const [requestedIds, setRequestedIds] = useState<string[]>([]);
   const [rating, setRating] = useState(0);
@@ -88,6 +91,22 @@ export default function ArrivalBadge({ event, onBack, connections, onAddConnecti
   const [hoverStar, setHoverStar] = useState(0);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (forceView) setView(forceView);
+  }, [forceView]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (demoConnectName) handleRequestContact(demoConnectName);
+  }, [demoConnectName]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (demoAcceptIncoming && incomingHandled === 'none' && incomingName && !alreadyConnectedToRequester) {
+      handleAcceptIncoming();
+    }
+  }, [demoAcceptIncoming]);
 
   const codeWord = event?.codeWord || 'LANTERN';
   const participants = event?.participants || ['Sophie', 'Liam', 'Marco', 'David'];
