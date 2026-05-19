@@ -18,23 +18,53 @@ interface HomeProps {
 
 const FILTERS = ['For You', 'All', 'Outdoors', 'Creative', 'Study', 'Games', 'Music', 'Food'];
 
+const MOVEMENT_INTERESTS = new Set(['running','cycling','bouldering','climbing','swimming','yoga','football','basketball','tennis','badminton','dance','martial arts','skateboarding','crossfit','volleyball','hiking','walking','sailing']);
+const CREATIVE_INTERESTS = new Set(['drawing','painting','sketching','photography','music','guitar','piano','singing','dj-ing','film','theatre','improv','writing','poetry','ceramics','knitting','graphic design','street art']);
+const MIND_INTERESTS    = new Set(['study','coding','reading','languages','philosophy','debating','science','history','mathematics','trivia','puzzles','astronomy','psychology','investing']);
+const GAMES_INTERESTS   = new Set(['board games','card games','chess','catan','d&d','tabletop rpg','warhammer','magic: the gathering','go','backgammon','escape rooms','trivia nights','strategy games']);
+const SOCIAL_INTERESTS  = new Set(['food & coffee','cooking','baking','wine','craft beer','language exchange','volunteering','community garden','movie nights','karaoke','concerts','museums','open mic','cultural events']);
+
+const MOVEMENT_VIBES = new Set(['outdoors','walking','running','cycling','bouldering','yoga','dance']);
+const CREATIVE_VIBES = new Set(['creative','drawing','photography','music','guitar','film','writing','ceramics','hands-on']);
+const MIND_VIBES     = new Set(['study','reading','tech','trivia','chess','calm']);
+const GAMES_VIBES    = new Set(['board games','chess','d&d','tabletop rpg','trivia']);
+const SOCIAL_VIBES   = new Set(['social-light','language exchange','food & coffee','volunteering','networking','beginner-friendly']);
+
 function getForYouEvents(prefs: UserPreferences | null): EventRoutine[] {
   if (!prefs || prefs.interests.length === 0) return events.slice(0, 8);
   const lower = prefs.interests.map((i) => i.toLowerCase());
+
+  const hasMovement = lower.some((i) => MOVEMENT_INTERESTS.has(i));
+  const hasCreative = lower.some((i) => CREATIVE_INTERESTS.has(i));
+  const hasMind     = lower.some((i) => MIND_INTERESTS.has(i));
+  const hasGames    = lower.some((i) => GAMES_INTERESTS.has(i));
+  const hasSocial   = lower.some((i) => SOCIAL_INTERESTS.has(i));
+
   const vibeMap: Record<string, string> = {
-    'Quiet': 'Calm', 'Social-light': 'Social-light', 'Mixed': '', 'Energetic': 'Active',
+    'Quiet': 'calm', 'Social-light': 'social-light', 'Mixed': '', 'Energetic': 'active',
   };
+
   const scored = events.map((e) => {
     let score = 0;
+    const catL  = e.category.toLowerCase();
+    const vibLs = e.vibe.map((v) => v.toLowerCase());
+
     lower.forEach((interest) => {
-      if (e.category.toLowerCase().includes(interest)) score += 3;
+      if (catL.includes(interest)) score += 3;
       if (e.title.toLowerCase().includes(interest)) score += 2;
     });
-    e.vibe.forEach((v) => {
-      if (lower.includes(v.toLowerCase())) score += 2;
+    vibLs.forEach((v) => {
+      if (lower.includes(v)) score += 2;
     });
+
+    if (hasMovement && vibLs.some((v) => MOVEMENT_VIBES.has(v))) score += 1;
+    if (hasCreative && (vibLs.some((v) => CREATIVE_VIBES.has(v)) || CREATIVE_VIBES.has(catL))) score += 1;
+    if (hasMind     && vibLs.some((v) => MIND_VIBES.has(v)))     score += 1;
+    if (hasGames    && vibLs.some((v) => GAMES_VIBES.has(v)))    score += 1;
+    if (hasSocial   && vibLs.some((v) => SOCIAL_VIBES.has(v)))   score += 1;
+
     if (prefs.vibe && vibeMap[prefs.vibe]) {
-      if (e.vibe.some((v) => v.toLowerCase().includes(vibeMap[prefs.vibe].toLowerCase()))) score += 1;
+      if (vibLs.some((v) => v.includes(vibeMap[prefs.vibe]))) score += 1;
     }
     if (prefs.language && (prefs.language === 'Both' || e.language === prefs.language)) score += 2;
     if (prefs.area) {
@@ -43,6 +73,7 @@ function getForYouEvents(prefs: UserPreferences | null): EventRoutine[] {
     }
     return { e, score };
   });
+
   const sorted = scored.sort((a, b) => b.score - a.score);
   const matched = sorted.filter((x) => x.score > 0).map((x) => x.e);
   if (matched.length >= 6) return matched;
